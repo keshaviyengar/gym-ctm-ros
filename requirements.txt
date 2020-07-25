@@ -25,8 +25,8 @@ pycrypto
 pybullet
 optuna
 rospkg
+stable-baselines
 -e git+https://github.com/bearpaw/pypcd.git@f1eac71abc63e60c208900f0227f333b414db03a#egg=pypcd
--e git+git@github.com:keshaviyengar/stable-baselines.git@2fea7ee093b46f4ed4e6d90729dd09bf9d115b38#egg=stable_baselines
 
 
 
