@@ -25,9 +25,8 @@ pycrypto
 pybullet
 optuna
 rospkg
---e git+git@github.com:keshaviyengar/gym-ctm-ros.git@88285795fd3d3ede4b879ce762e32c0d105a3092#egg=ctm_envs
---e git+https://github.com/bearpaw/pypcd.git@f1eac71abc63e60c208900f0227f333b414db03a#egg=pypcd
---e git+git@github.com:keshaviyengar/stable-baselines.git@2fea7ee093b46f4ed4e6d90729dd09bf9d115b38#egg=stable_baselines
+-e git+https://github.com/bearpaw/pypcd.git@f1eac71abc63e60c208900f0227f333b414db03a#egg=pypcd
+-e git+git@github.com:keshaviyengar/stable-baselines.git@2fea7ee093b46f4ed4e6d90729dd09bf9d115b38#egg=stable_baselines
 
 
 
