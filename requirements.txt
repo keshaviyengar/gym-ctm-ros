@@ -8,7 +8,7 @@ progressbar2
 mpi4py
 cloudpickle
 tensorflow==1.5.0
-click &&
+click
 opencv-python
 numpy
 pandas
