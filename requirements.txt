@@ -1,5 +1,5 @@
 absl-py==0.7.1
-actionlib==1.12
+actionlib
 alembic==1.0.10
 angles==1.9.12
 astor==0.8.0
