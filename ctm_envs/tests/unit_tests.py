@@ -5,7 +5,7 @@ from gym.wrappers import FlattenDictWrapper
 import numpy as np
 
 
-def test_env(spec, kwargs):
+def environment(spec, kwargs):
     env = FlattenDictWrapper(spec.make(**kwargs), ['observation', 'desired_goal', 'achieved_goal'])
     ob_space = env.observation_space
     act_space = env.action_space
@@ -28,7 +28,7 @@ def test_env(spec, kwargs):
 
 
 # Run a longer rollout on some environments
-def test_random_rollout(spec, kwargs):
+def random_rollout(spec, kwargs):
     env = FlattenDictWrapper(spec.make(**kwargs), ['observation', 'desired_goal', 'achieved_goal'])
     agent = lambda ob: env.action_space.sample()
     ob = env.reset()
@@ -42,21 +42,20 @@ def test_random_rollout(spec, kwargs):
     env.close()
 
 
-spec_list = [gym.spec('CTR-Reach-v0')]
-for spec in spec_list:
-    representations = ['basic', 'trig', 'polar']
-    model = ['dominant_stiffness', 'exact']
-    inc_tol_obs = [True, False]
-    tol_function = ['constant', 'linear', 'decay']
+def test_environment():
+    spec_list = [gym.spec('CTR-Reach-v0')]
+    for spec in spec_list:
+        representations = ['basic', 'trig', 'polar']
+        model = ['dominant_stiffness', 'exact']
+        inc_tol_obs = [True, False]
+        tol_function = ['constant', 'linear', 'decay']
 
-    for i in representations:
-        for j in model:
-            for k in inc_tol_obs:
-                for m in tol_function:
-                    goal_tolerance_args = {'inc_tol_obs': k, 'initial_tol': 0.020, 'final_tol': 0.001,
-                                           'N_ts': 200000, 'function': m}
-                    kwargs = {'joint_representation': i, 'model': j, 'goal_tolerance_parameters': goal_tolerance_args}
-                    test_env(spec, kwargs)
-                    test_random_rollout(spec, kwargs)
-
-print("All tests passed!")
+        for i in representations:
+            for j in model:
+                for k in inc_tol_obs:
+                    for m in tol_function:
+                        goal_tolerance_args = {'inc_tol_obs': k, 'initial_tol': 0.020, 'final_tol': 0.001,
+                                               'N_ts': 200000, 'function': m}
+                        kwargs = {'joint_representation': i, 'model': j, 'goal_tolerance_parameters': goal_tolerance_args}
+                        environment(spec, kwargs)
+                        random_rollout(spec, kwargs)
