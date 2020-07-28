@@ -7,7 +7,6 @@ from ctm_envs.envs.polar_obs import PolarObs
 from ctm_envs.envs.dominant_stiffness_model import DominantStiffnessModel
 from ctm_envs.envs.exact_model import ExactModel
 
-from ctm_envs.envs.ctm_render import CtmRender
 
 
 class TubeParameters(object):
@@ -71,7 +70,7 @@ class GoalTolerance(object):
 
 class CtmEnv(gym.GoalEnv):
     def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps, n_substeps,
-                 goal_tolerance_parameters, joint_representation, initial_q):
+                 goal_tolerance_parameters, joint_representation, initial_q, render):
 
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
@@ -101,8 +100,11 @@ class CtmEnv(gym.GoalEnv):
             self.model = ExactModel(self.tubes)
         else:
             print("Model unavailable")
-        # TODO: Add check even if to render
-        # self.render_obj = CtmRender()
+
+        if render:
+            from ctm_envs.envs.ctm_render import CtmRender
+            print("Rendering turned off.")
+            self.render_obj = CtmRender(model)
 
         if joint_representation == 'basic':
             self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q)
@@ -156,7 +158,16 @@ class CtmEnv(gym.GoalEnv):
         return -(d > self.goal_tol_obj.get_tol()).astype(np.float32)
 
     def render(self, mode='human'):
-        pass
+        # TODO: Issue in pycharm, python 2 ros libaries can't be found. Run in terminal.
+        self.render_obj.publish_desired_goal(self.rep_obj.get_desired_goal())
+        self.render_obj.publish_achieved_goal(self.rep_obj.get_achieved_goal())
+
+        if self.render_obj.model == 'dominant_stiffness':
+            self.render_obj.publish_joints(self.rep_obj.get_q())
+        elif self.render_obj.model == 'exact':
+            self.render_obj.publish_segments(self.model.get_r())
+        else:
+            print("Incorrect model selected, no rendering")
 
     def close(self):
         print("Closed env.")

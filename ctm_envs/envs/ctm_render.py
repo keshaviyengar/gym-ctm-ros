@@ -1,32 +1,44 @@
 import numpy as np
 import rospy
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 from visualization_msgs.msg import Marker
+from std_msgs.msg import Header
 
 
 # Class used to deal with both model render functions (dominant stiffness and exact)
 class CtmRender:
-    def __init__(self):
+    def __init__(self, model):
+        self.model = model
         # Initialize node, subscribers and publishers
         rospy.init_node('ctm_env', anonymous=True)
         self.joints_pub = rospy.Publisher('ctm/command/joint', JointTrajectory, queue_size=10)
-        self.ag_pub = rospy.Publisher('ctm/achieved_goal', Point, queue_size=10)
-        self.dg_pub = rospy.Publisher('ctm/desired_goal', Point, queue_size=10)
+        self.ag_pub = rospy.Publisher('ctm/achieved_goal', PointStamped, queue_size=10)
+        self.dg_pub = rospy.Publisher('ctm/desired_goal', PointStamped, queue_size=10)
         self.tube_backbone_pub = rospy.Publisher("tube_backbone_line", Marker, queue_size=100)
 
+        self.scale_factor = 100
+
     def publish_achieved_goal(self, achieved_goal):
-        ag_msg = Point()
-        ag_msg.x = achieved_goal[0]
-        ag_msg.y = achieved_goal[1]
-        ag_msg.z = achieved_goal[2]
+        ag_msg = PointStamped()
+        ag_msg.header = Header()
+        ag_msg.header.frame_id = "world"
+        ag_msg.header.stamp = rospy.Time.now()
+        ag_msg.point = Point()
+        ag_msg.point.x = achieved_goal[0] * self.scale_factor
+        ag_msg.point.y = achieved_goal[1] * self.scale_factor
+        ag_msg.point.z = achieved_goal[2] * self.scale_factor
         self.ag_pub.publish(ag_msg)
 
     def publish_desired_goal(self, desired_goal):
-        dg_msg = Point()
-        dg_msg.x = desired_goal[0]
-        dg_msg.y = desired_goal[1]
-        dg_msg.z = desired_goal[2]
+        dg_msg = PointStamped()
+        dg_msg.header = Header()
+        dg_msg.header.frame_id = "world"
+        dg_msg.header.stamp = rospy.Time.now()
+        dg_msg.point = Point()
+        dg_msg.point.x = desired_goal[0] * self.scale_factor
+        dg_msg.point.y = desired_goal[1] * self.scale_factor
+        dg_msg.point.z = desired_goal[2] * self.scale_factor
         self.dg_pub.publish(dg_msg)
 
     def publish_segments(self, segments):
@@ -34,9 +46,9 @@ class CtmRender:
         # TODO: Better way of doing this?
         for point in segments:
             seg_point = Point()
-            seg_point.x = point[0] * 100
-            seg_point.y = point[1] * 100
-            seg_point.z = point[2] * 100
+            seg_point.x = point[0] * self.scale_factor
+            seg_point.y = point[1] * self.scale_factor
+            seg_point.z = point[2] * self.scale_factor
             segment_points.append(seg_point)
 
         # Set up markers
@@ -59,7 +71,7 @@ class CtmRender:
 
     # Joints of the form [(beta+L)_0, ..., (beta+L)_n, alpha_0, ..., alpha_n]
     def publish_joints(self, joints):
-        num_tubes = np.size(joints) / 2
+        num_tubes = int(np.size(joints) / 2)
         # Preprocessing of joints (need to flip before publishing for C++ code
         gamma = np.flip(joints[num_tubes:], axis=0)
         beta_L = joints[0:num_tubes]
@@ -73,3 +85,4 @@ class CtmRender:
         joint_msg = JointTrajectory()
         joint_msg.points.append(joint_point)
         self.joints_pub.publish(joint_msg)
+

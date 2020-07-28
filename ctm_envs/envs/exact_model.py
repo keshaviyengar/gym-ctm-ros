@@ -7,6 +7,7 @@ from ctm_envs.envs.model_base import ModelBase
 
 class ExactModel(ModelBase):
     def __init__(self, tube_parameters, ros=False):
+        self.r = []
         super(ExactModel, self).__init__(tube_parameters, ros=False)
 
     # q[0:2] are extension values and q[3:5] rotation values from the base
@@ -82,6 +83,7 @@ class ExactModel(ModelBase):
                 print("Index for u_z is zero b is NaN")
                 u_z_end[k] = 0
                 tip_pos[k] = 0
+        self.r = r
         return r[-1]
 
     def ode_eq(self, y, s, ux_0, uy_0, ei, gj):
@@ -130,6 +132,9 @@ class ExactModel(ModelBase):
 
         dydt[-9:] = dR
         return dydt.ravel()
+
+    def get_r(self):
+        return self.r
 
 
 # Initialized with objects of class TubeParameters
