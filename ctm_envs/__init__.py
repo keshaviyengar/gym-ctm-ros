@@ -31,7 +31,7 @@ register(
         'joint_representation': 'basic',
         # Format is [beta_0, beta_1, ..., beta_n, alpha_0, ..., alpha_n]
         'initial_q': [0, 0, 0, 0, 0, 0],
-        'render': True
+        'render': False
     },
     max_episode_steps=150.
 )
