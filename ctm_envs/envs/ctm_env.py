@@ -158,16 +158,17 @@ class CtmEnv(gym.GoalEnv):
         return -(d > self.goal_tol_obj.get_tol()).astype(np.float32)
 
     def render(self, mode='human'):
-        # TODO: Issue in pycharm, python 2 ros libaries can't be found. Run in terminal.
-        self.render_obj.publish_desired_goal(self.rep_obj.get_desired_goal())
-        self.render_obj.publish_achieved_goal(self.rep_obj.get_achieved_goal())
+        if self.render_obj is not None:
+            # TODO: Issue in pycharm, python 2 ros libaries can't be found. Run in terminal.
+            self.render_obj.publish_desired_goal(self.rep_obj.get_desired_goal())
+            self.render_obj.publish_achieved_goal(self.rep_obj.get_achieved_goal())
 
-        if self.render_obj.model == 'dominant_stiffness':
-            self.render_obj.publish_joints(self.rep_obj.get_q())
-        elif self.render_obj.model == 'exact':
-            self.render_obj.publish_segments(self.model.get_r())
-        else:
-            print("Incorrect model selected, no rendering")
+            if self.render_obj.model == 'dominant_stiffness':
+                self.render_obj.publish_joints(self.rep_obj.get_q())
+            elif self.render_obj.model == 'exact':
+                self.render_obj.publish_segments(self.model.get_r())
+            else:
+                print("Incorrect model selected, no rendering")
 
     def close(self):
         print("Closed env.")
