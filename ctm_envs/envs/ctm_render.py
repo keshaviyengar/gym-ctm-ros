@@ -8,14 +8,26 @@ from std_msgs.msg import Header
 
 # Class used to deal with both model render functions (dominant stiffness and exact)
 class CtmRender:
-    def __init__(self, model):
+    def __init__(self, model, tubes):
         self.model = model
+        self.tubes = tubes
+        self.k = [i.k for i in self.tubes]
+        self.l_curved = [i.L_c for i in self.tubes]
+        self.tube_lengths = [i.L for i in self.tubes]
         # Initialize node, subscribers and publishers
         rospy.init_node('ctm_env', anonymous=True)
         self.joints_pub = rospy.Publisher('ctm/command/joint', JointTrajectory, queue_size=10)
         self.ag_pub = rospy.Publisher('ctm/achieved_goal', PointStamped, queue_size=10)
         self.dg_pub = rospy.Publisher('ctm/desired_goal', PointStamped, queue_size=10)
         self.tube_backbone_pub = rospy.Publisher("tube_backbone_line", Marker, queue_size=100)
+
+        rospy.set_param("sim/num_tubes", 3)
+        rospy.set_param("sim/kappa/tube_0", self.k[-1])
+        rospy.set_param("sim/kappa/tube_1", self.k[-2])
+        rospy.set_param("sim/kappa/tube_2", self.k[-3])
+        rospy.set_param("sim/l_curved/tube_0", self.l_curved[-1])
+        rospy.set_param("sim/l_curved/tube_1", self.l_curved[-2])
+        rospy.set_param("sim/l_curved/tube_2", self.l_curved[-3])
 
         self.scale_factor = 100
 

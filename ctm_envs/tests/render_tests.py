@@ -20,12 +20,12 @@ def rendering_test(env, num_samples):
 
 
 if __name__ == '__main__':
-    dominant_stiffness_kwargs = {'model': 'dominant_stiffness', 'joint_representation': 'trig'}
+    dominant_stiffness_kwargs = {'model': 'dominant_stiffness', 'joint_representation': 'trig', 'render': True}
     exact_kwargs = {'model': 'exact', 'joint_representation': 'trig'}
 
     dominant_stiffness_env = gym.make('CTR-Reach-v0', **dominant_stiffness_kwargs)
     exact_env = gym.make('CTR-Reach-v0', **exact_kwargs)
 
-    rendering_test(exact_env, 50)
+    rendering_test(dominant_stiffness_env, 50)
     quit()
 

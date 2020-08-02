@@ -103,8 +103,8 @@ class CtmEnv(gym.GoalEnv):
 
         if render:
             from ctm_envs.envs.ctm_render import CtmRender
-            print("Rendering turned off.")
-            self.render_obj = CtmRender(model)
+            print("Rendering turned on.")
+            self.render_obj = CtmRender(model, self.tubes)
 
         if joint_representation == 'basic':
             self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q)
