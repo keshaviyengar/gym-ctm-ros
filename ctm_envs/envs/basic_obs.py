@@ -11,6 +11,7 @@ This representation is the simple {beta_i, alpha_i} representation
 class BasicObs(ObsBase):
     def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q):
         super().__init__(tube_parameters, goal_tolerance_parameters, initial_q)
+        print("Basic joint representation used")
 
     def get_observation_space(self):
         initial_tol = self.goal_tolerance_parameters['initial_tol']

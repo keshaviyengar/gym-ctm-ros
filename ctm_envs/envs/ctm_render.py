@@ -2,7 +2,7 @@ import numpy as np
 import rospy
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from geometry_msgs.msg import Point, PointStamped
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Header
 
 
@@ -19,7 +19,8 @@ class CtmRender:
         self.joints_pub = rospy.Publisher('ctm/command/joint', JointTrajectory, queue_size=10)
         self.ag_pub = rospy.Publisher('ctm/achieved_goal', PointStamped, queue_size=10)
         self.dg_pub = rospy.Publisher('ctm/desired_goal', PointStamped, queue_size=10)
-        self.tube_backbone_pub = rospy.Publisher("tube_backbone_line", Marker, queue_size=100)
+        # self.tube_backbone_pub = rospy.Publisher("/ctm/tube_backbone_line", Marker, queue_size=100)
+        self.viz_pub = rospy.Publisher("visualization_marker_array", MarkerArray, queue_size=100)
 
         rospy.set_param("sim/num_tubes", 3)
         rospy.set_param("sim/kappa/tube_0", self.k[-1])
@@ -29,7 +30,7 @@ class CtmRender:
         rospy.set_param("sim/l_curved/tube_1", self.l_curved[-2])
         rospy.set_param("sim/l_curved/tube_2", self.l_curved[-3])
 
-        self.scale_factor = 100
+        self.scale_factor = 1
 
     def publish_achieved_goal(self, achieved_goal):
         ag_msg = PointStamped()
@@ -54,6 +55,73 @@ class CtmRender:
         self.dg_pub.publish(dg_msg)
 
     def publish_segments(self, segments):
+        # Publish a marker array of cylinders (TODO: add in colour for different tubes)
+        nPts = len(segments)
+
+        # marker array allocation
+        marker_array = MarkerArray()
+
+        for j, backbonePt in enumerate(segments):
+            marker = Marker()
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = "/world"
+            marker.type = Marker.CYLINDER
+            marker.color.a = 1.0
+
+            marker.id = j
+            px = backbonePt[0]
+            py = backbonePt[1]
+            pz = backbonePt[2]
+            # TODO: Add quaternion
+
+            marker.action = Marker.MODIFY
+
+            # Compute gap
+            gap = 0
+            if j < (nPts - 1):
+                px_next = segments[j + 1][0]
+                py_next = segments[j + 1][1]
+                pz_next = segments[j + 1][2]
+                gap = np.sqrt(
+                    (px - px_next) * (px - px_next) + (py - py_next) * (py - py_next) + (pz - pz_next) * (pz - pz_next))
+
+            if gap < 0.00001:
+                gap = 0.00001
+
+            marker.pose.position.x = px
+            marker.pose.position.y = py
+            marker.pose.position.z = pz
+
+            # TODO: Correctly set orientation
+            marker.pose.orientation.x = 0
+            marker.pose.orientation.y = 0
+            marker.pose.orientation.z = 0
+            marker.pose.orientation.w = 1
+
+            # generally make the length of the cylinders twice the gaps
+            # For the first cylinder, length should equal gap
+            # Length of last marker arbitrarily small
+
+            if j == nPts:
+                marker.scale.z = 0.00000005
+            elif j == 1:
+                marker.scale.z = gap
+            else:
+                marker.scale.z = gap * 2
+
+            # For now set same color. TODO: separate color per tube with correct radius
+            marker.color.r = 0.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.scale.x = 1.168e-3
+            marker.scale.y = 1.168e-3
+
+            marker_array.markers.append(marker)
+
+        # Publish marker array
+        self.viz_pub.publish(marker_array)
+
+        """
         segment_points = []
         # TODO: Better way of doing this?
         for point in segments:
@@ -66,11 +134,12 @@ class CtmRender:
         # Set up markers
         marker = Marker()
         marker.header.frame_id = "world"
-        marker.type = Marker.LINE_LIST
+        marker.type = Marker.POINTS
         marker.action = Marker.MODIFY
-        marker.scale.x = 1.0
-        marker.scale.y = 1.0
-        marker.color.a = 1.0
+        marker.scale.x = 1e-3
+        marker.scale.y = 1e-3
+        marker.scale.z = 1e-3
+        marker.color.a = 1
         marker.color.r = 1.0
         marker.color.g = 0.0
         marker.color.b = 0.0
@@ -80,6 +149,7 @@ class CtmRender:
         marker.pose.orientation.z = 0
         marker.pose.orientation.w = 1
         self.tube_backbone_pub.publish(marker)
+        """
 
     # Joints of the form [(beta+L)_0, ..., (beta+L)_n, alpha_0, ..., alpha_n]
     def publish_joints(self, joints):
@@ -97,4 +167,3 @@ class CtmRender:
         joint_msg = JointTrajectory()
         joint_msg.points.append(joint_point)
         self.joints_pub.publish(joint_msg)
-

@@ -13,6 +13,7 @@ class PolarObs(ObsBase):
     def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, k=1):
         self.k = k
         super().__init__(tube_parameters, goal_tolerance_parameters, initial_q)
+        print("Polar joint representation used")
 
     def get_observation_space(self):
         initial_tol = self.goal_tolerance_parameters['initial_tol']

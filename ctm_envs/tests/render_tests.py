@@ -16,7 +16,7 @@ def rendering_test(env, num_samples):
         a = env.action_space.sample()
         state, reward, done, info = env.step(a)
         env.render()
-        time.sleep(2.0)
+        time.sleep(1.0)
 
 
 if __name__ == '__main__':

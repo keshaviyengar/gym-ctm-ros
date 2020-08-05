@@ -105,6 +105,8 @@ class CtmEnv(gym.GoalEnv):
             from ctm_envs.envs.ctm_render import CtmRender
             print("Rendering turned on.")
             self.render_obj = CtmRender(model, self.tubes)
+        else:
+            self.render_obj = None
 
         if joint_representation == 'basic':
             self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q)
@@ -165,6 +167,7 @@ class CtmEnv(gym.GoalEnv):
 
             if self.render_obj.model == 'dominant_stiffness':
                 self.render_obj.publish_joints(self.rep_obj.get_q())
+                self.render_obj.publish_segments(self.model.get_r())
             elif self.render_obj.model == 'exact':
                 self.render_obj.publish_segments(self.model.get_r())
             else:
