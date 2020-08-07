@@ -5,6 +5,9 @@ from geometry_msgs.msg import Point, PointStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Header
 
+from scipy.spatial.transform import Rotation as R
+
+
 
 # Class used to deal with both model render functions (dominant stiffness and exact)
 class CtmRender:
@@ -21,14 +24,6 @@ class CtmRender:
         self.dg_pub = rospy.Publisher('ctm/desired_goal', PointStamped, queue_size=10)
         # self.tube_backbone_pub = rospy.Publisher("/ctm/tube_backbone_line", Marker, queue_size=100)
         self.viz_pub = rospy.Publisher("visualization_marker_array", MarkerArray, queue_size=100)
-
-        rospy.set_param("sim/num_tubes", 3)
-        rospy.set_param("sim/kappa/tube_0", self.k[-1])
-        rospy.set_param("sim/kappa/tube_1", self.k[-2])
-        rospy.set_param("sim/kappa/tube_2", self.k[-3])
-        rospy.set_param("sim/l_curved/tube_0", self.l_curved[-1])
-        rospy.set_param("sim/l_curved/tube_1", self.l_curved[-2])
-        rospy.set_param("sim/l_curved/tube_2", self.l_curved[-3])
 
         self.scale_factor = 1
 
@@ -53,6 +48,72 @@ class CtmRender:
         dg_msg.point.y = desired_goal[1] * self.scale_factor
         dg_msg.point.z = desired_goal[2] * self.scale_factor
         self.dg_pub.publish(dg_msg)
+
+    def publish_transforms(self, transforms):
+        nPts = len(transforms)
+        # marker array allocation
+        marker_array = MarkerArray()
+        header_stamp = rospy.Time.now()
+
+        for j, backbonePt in enumerate(transforms):
+            marker = Marker()
+            marker.header.stamp = header_stamp
+            marker.header.frame_id = "/world"
+            marker.type = Marker.CYLINDER
+            marker.color.a = 1.0
+
+            marker.id = j
+            px = backbonePt[3, 0]
+            py = backbonePt[3, 1]
+            pz = backbonePt[3, 2]
+
+            marker.action = Marker.ADD
+
+            # Compute gap
+            gap = 0
+            if j < (nPts - 1):
+                px_next = transforms[j + 1][3, 0]
+                py_next = transforms[j + 1][3, 1]
+                pz_next = transforms[j + 1][3, 2]
+                gap = np.sqrt(
+                    (px - px_next) * (px - px_next) + (py - py_next) * (py - py_next) + (pz - pz_next) * (pz - pz_next))
+
+            if gap < 0.00001:
+                gap = 0.00001
+
+            marker.pose.position.x = px
+            marker.pose.position.y = py
+            marker.pose.position.z = pz
+
+            pr = R.from_dcm(backbonePt[:3, :3])
+
+            marker.pose.orientation.x = pr.as_quat()[0]
+            marker.pose.orientation.y = pr.as_quat()[1]
+            marker.pose.orientation.z = pr.as_quat()[2]
+            marker.pose.orientation.w = pr.as_quat()[3]
+
+            # generally make the length of the cylinders twice the gaps
+            # For the first cylinder, length should equal gap
+            # Length of last marker arbitrarily small
+
+            if j == nPts:
+                marker.scale.z = 0.00000005
+            elif j == 1:
+                marker.scale.z = gap
+            else:
+                marker.scale.z = gap * 2
+
+            # For now set same color. TODO: separate color per tube with correct radius
+            marker.color.r = 0.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.scale.x = 1.168e-3
+            marker.scale.y = 1.168e-3
+
+            marker_array.markers.append(marker)
+
+        # Publish marker array
+        self.viz_pub.publish(marker_array)
 
     def publish_segments(self, segments):
         # Publish a marker array of cylinders (TODO: add in colour for different tubes)

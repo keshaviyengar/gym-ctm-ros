@@ -13,6 +13,7 @@ class DominantStiffnessModel(ModelBase):
         self.l_curved = [i.L_c for i in self.tubes]
         self.tube_lengths = [i.L for i in self.tubes]
         self.r = []
+        self.r_transforms = []
 
     def forward_kinematics(self, q, **kwargs):
         """
@@ -31,6 +32,8 @@ class DominantStiffnessModel(ModelBase):
         T_tube = np.matlib.identity(4)
         # array of segment points
         r = np.empty([30, 3])
+        # array of segment points transforms
+        r_transforms = np.empty([30, 4, 4])
 
         for i in range(0, self.num_tubes):
             l = np.linspace(0, distal_length[i], 10)
@@ -38,7 +41,8 @@ class DominantStiffnessModel(ModelBase):
                 # Get segment transform
                 T_trans = self.constant_curvature_transformation(gamma[i], k[i], j, T_tube, distal_length[i], l_curved[i])
                 r[count + 10*i, :] = np.array([T_trans[0, 3], T_trans[1, 3], T_trans[2, 3]])
-            # Update T_tube
+                r_transforms[count + 10*i, :, :] = T_trans
+            # Update T_tube for tube
             T_tube = self.constant_curvature_transformation(gamma[i], k[i], distal_length[i], T_tube, distal_length[i],
                                                             l_curved[i])
 
@@ -96,12 +100,16 @@ class DominantStiffnessModel(ModelBase):
         assert not np.isnan(r).any()
         ee_position = r[-1]
         self.r = r.tolist()
+        self.r_transforms = r_transforms
         return ee_position
         # return as a quaternion vector pair
         # return current_orientation, current_pos
 
     def get_r(self):
         return self.r
+
+    def get_r_transforms(self):
+        return self.r_transforms
 
     def constant_curvature_transformation(self, gamma, k, l, T_tube, distal_length, l_curved):
         T_curve = np.matlib.identity(4)
