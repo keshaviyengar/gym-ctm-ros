@@ -7,17 +7,20 @@ It should implement converting joints from basic to other representations,
 setting actions and returning the resultant state and
 changing the goal tolerance if variable goal tolerance is used.
 
-q: Current joint as the basic representation to limit complexty
-{beta_0, ..., beta_i, alpha_0, ..., alpha_i}
+q: Current joint as relative joint representation
+{beta_0, beta_1 - beta_0, beta_2 - beta_1, ..., beta_{i+1} - beta_{i},  alpha_0, alpha_1 - alpha_0, alpha_2 - alpha_1,
+..., alpha_{i+1} - alpha_i}
 """
 
 
 class ObsBase:
-    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q):
+    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q):
         self.tubes = tube_parameters
         self.tube_lengths = [i.L for i in self.tubes]
         self.goal_tolerance_parameters = goal_tolerance_parameters
+        # Keep q as absolute joint positions, convert to relative as needed and store as absolute
         self.q = initial_q
+        self.relative_q = relative_q
 
         self.num_tubes = len(tube_parameters)
 
@@ -73,8 +76,12 @@ class ObsBase:
         q_constrain = np.concatenate((betas, alphas))
         return q_constrain
 
-    def get_obs(self, desired_goal, achieved_goal, goal_tolerance):
-        rep = self.joint2rep(self.q)
+    def get_obs(self, desired_goal, achieved_goal, goal_tolerance, relative=False):
+        # Relative joint representation
+        if relative:
+            rep = self.joint2rep(self.qabs2rel(self.q))
+        else:
+            rep = self.joint2rep(self.q)
         if self.inc_tol_obs:
             self.obs = {
                 'desired_goal': desired_goal,
@@ -95,6 +102,22 @@ class ObsBase:
 
     def get_q(self):
         return self.q
+
+    def qrel2abs(self, q):
+        betas = q[0:self.num_tubes]
+        alphas = q[self.num_tubes:]
+        # Compute difference
+        rel_beta = np.diff(betas, prepend=betas[0])
+        rel_alphas = np.diff(alphas, prepend=alphas[0])
+        return np.concatenate((rel_beta, rel_alphas))
+
+    def qabs2rel(self, q):
+        # Compute difference
+        rel_beta = q[0:self.num_tubes]
+        rel_alpha = q[self.num_tubes:]
+        betas = np.concatenate((rel_beta[0], rel_beta)).cumsum()
+        alphas = np.concatenate((rel_alpha[0], rel_alpha)).cumsum()
+        return np.concatenate((betas, alphas))
 
     def get_desired_goal(self):
         return self.obs['desired_goal']
