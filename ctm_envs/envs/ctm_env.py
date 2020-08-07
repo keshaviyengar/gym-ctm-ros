@@ -70,7 +70,7 @@ class GoalTolerance(object):
 
 class CtmEnv(gym.GoalEnv):
     def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps, n_substeps,
-                 goal_tolerance_parameters, joint_representation, initial_q, render):
+                 goal_tolerance_parameters, joint_representation, relative_q, initial_q, render):
 
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
@@ -109,14 +109,14 @@ class CtmEnv(gym.GoalEnv):
             self.render_obj = None
 
         if joint_representation == 'basic':
-            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q)
+            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
         elif joint_representation == 'trig':
-            self.rep_obj = TrigObs(self.tubes, goal_tolerance_parameters, initial_q)
+            self.rep_obj = TrigObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
         elif joint_representation == 'polar':
-            self.rep_obj = PolarObs(self.tubes, goal_tolerance_parameters, initial_q, 1)
+            self.rep_obj = PolarObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
         else:
             print("Incorrect representation selected, defaulting to basic.")
-            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q)
+            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
 
         self.goal_tol_obj = GoalTolerance(goal_tolerance_parameters)
         self.t = 0
