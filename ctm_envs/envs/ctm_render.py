@@ -8,7 +8,6 @@ from std_msgs.msg import Header
 from scipy.spatial.transform import Rotation as R
 
 
-
 # Class used to deal with both model render functions (dominant stiffness and exact)
 class CtmRender:
     def __init__(self, model, tubes):
@@ -63,18 +62,18 @@ class CtmRender:
             marker.color.a = 1.0
 
             marker.id = j
-            px = backbonePt[3, 0]
-            py = backbonePt[3, 1]
-            pz = backbonePt[3, 2]
+            px = backbonePt[0, 3]
+            py = backbonePt[1, 3]
+            pz = backbonePt[2, 3]
 
             marker.action = Marker.ADD
 
             # Compute gap
             gap = 0
             if j < (nPts - 1):
-                px_next = transforms[j + 1][3, 0]
-                py_next = transforms[j + 1][3, 1]
-                pz_next = transforms[j + 1][3, 2]
+                px_next = transforms[j + 1][0, 3]
+                py_next = transforms[j + 1][1, 3]
+                pz_next = transforms[j + 1][2, 3]
                 gap = np.sqrt(
                     (px - px_next) * (px - px_next) + (py - py_next) * (py - py_next) + (pz - pz_next) * (pz - pz_next))
 

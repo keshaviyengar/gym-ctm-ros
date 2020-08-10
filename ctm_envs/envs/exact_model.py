@@ -8,6 +8,7 @@ from ctm_envs.envs.model_base import ModelBase
 class ExactModel(ModelBase):
     def __init__(self, tube_parameters, ros=False):
         self.r = []
+        self.r_transforms = []
         super(ExactModel, self).__init__(tube_parameters, ros=False)
 
     # q[0:2] are extension values and q[3:5] rotation values from the base
@@ -46,6 +47,7 @@ class ExactModel(ModelBase):
 
         Length = np.empty(0)
         r = np.empty((0, 3))
+        r_transforms = np.empty((len(segments.S), 4, 4))
         u_z = np.empty((0, self.num_tubes))
         alpha = np.empty((0, self.num_tubes))
         span = np.append([0], segments.S)
@@ -59,6 +61,14 @@ class ExactModel(ModelBase):
             u_z = np.vstack((u_z, s[:, 0:self.num_tubes]))
             alpha = np.vstack((alpha, s[:, self.num_tubes:2*self.num_tubes]))
             r = np.vstack((r, s[:, 2*self.num_tubes:2*self.num_tubes+3]))
+
+            # Start with identity
+            transform = np.identity(4)
+            # Add rotation
+            transform[:3, :3] = np.array(s[-1, -9:]).reshape(3, 3)
+            # Add position
+            transform[0:3, 3] = np.array(s[-1, 2*self.num_tubes:2*self.num_tubes+3]).reshape(3)
+            r_transforms[seg, :, :] = transform
 
             # new boundary conditions for next segment
             r_0 = r[-1, :].reshape(3, 1)
@@ -84,6 +94,7 @@ class ExactModel(ModelBase):
                 u_z_end[k] = 0
                 tip_pos[k] = 0
         self.r = r
+        self.r_transforms = r_transforms
         return r[-1]
 
     def ode_eq(self, y, s, ux_0, uy_0, ei, gj):
@@ -135,6 +146,9 @@ class ExactModel(ModelBase):
 
     def get_r(self):
         return self.r
+
+    def get_r_transforms(self):
+        return self.r_transforms
 
 
 # Initialized with objects of class TubeParameters
