@@ -1,5 +1,0 @@
-ctm_envs.egg-info/PKG-INFO
-ctm_envs.egg-info/SOURCES.txt
-ctm_envs.egg-info/dependency_links.txt
-ctm_envs.egg-info/requires.txt
-ctm_envs.egg-info/top_level.txt
