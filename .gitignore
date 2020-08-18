@@ -5,6 +5,8 @@ __pycache__
 *.pyc
 *.travis.yml
 
+ctm_envs.egg-info/*
+
 # C extensions
 *.so
 
