@@ -11,6 +11,8 @@ This representation is the trigonometric / cylindrical {cos(alpha)_i, sin(alpha_
 class TrigObs(ObsBase):
     def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q):
         super().__init__(tube_parameters, goal_tolerance_parameters, initial_q, relative_q)
+        self.goal_dim = 3
+        self.obs_dim = 0
         print("Trig joint representation used")
 
     def get_observation_space(self):
@@ -38,6 +40,7 @@ class TrigObs(ObsBase):
                 high=obs_space_high,
                 dtype="float32")
         ))
+        self.obs_dim = obs_space_low.size
         return observation_space
 
     def get_rep_space(self):

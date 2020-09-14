@@ -149,8 +149,8 @@ class CtmEnv(gym.GoalEnv):
         done = (reward == 0) or (self.t >= self.max_episode_steps)
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
 
-        info = {'is_success': reward == 0, 'error': np.linalg.norm(desired_goal - achieved_goal),
-                'goal_tolerance': self.goal_tol_obj.get_tol()}
+        info = {'is_success':  done, 'error': np.linalg.norm(desired_goal - achieved_goal),
+                'goal_tolerance': self.goal_tol_obj.get_tol(), 'achieved_goal': achieved_goal, 'desired_goal': desired_goal}
 
         return obs, reward, done, info
 
@@ -180,3 +180,9 @@ class CtmEnv(gym.GoalEnv):
 
     def update_goal_tolerance(self, N_ts):
         self.goal_tol_obj.update(N_ts)
+    
+    def get_obs_dim(self):
+        return self.rep_obj.obs_dim
+
+    def get_goal_dim(self):
+        return self.rep_obj.goal_dim
