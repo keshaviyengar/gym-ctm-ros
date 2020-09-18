@@ -8,7 +8,6 @@ from ctm_envs.envs.dominant_stiffness_model import DominantStiffnessModel
 from ctm_envs.envs.exact_model import ExactModel
 
 
-
 class TubeParameters(object):
     def __init__(self, length, length_curved, outer_diameter, inner_diameter, stiffness, torsional_stiffness,
                  x_curvature, y_curvature, k):
@@ -46,7 +45,7 @@ class GoalTolerance(object):
 
         if self.function == 'decay':
             self.a = self.init_tol
-            self.r = 1 - np.power((self.final_tol / self. init_tol), 1 / self.N_ts)
+            self.r = 1 - np.power((self.final_tol / self.init_tol), 1 / self.N_ts)
 
         self.current_tol = self.init_tol
 
@@ -69,7 +68,8 @@ class GoalTolerance(object):
 
 
 class CtmEnv(gym.GoalEnv):
-    def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps, n_substeps,
+    def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps,
+                 n_substeps,
                  goal_tolerance_parameters, joint_representation, relative_q, initial_q, render):
 
         self.num_tubes = len(tube_parameters.keys())
@@ -149,8 +149,10 @@ class CtmEnv(gym.GoalEnv):
         done = (reward == 0) or (self.t >= self.max_episode_steps)
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
 
-        info = {'is_success':  done, 'error': np.linalg.norm(desired_goal - achieved_goal),
-                'goal_tolerance': self.goal_tol_obj.get_tol(), 'achieved_goal': achieved_goal, 'desired_goal': desired_goal}
+        info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
+                'error': np.linalg.norm(desired_goal - achieved_goal),
+                'goal_tolerance': self.goal_tol_obj.get_tol(), 'achieved_goal': achieved_goal,
+                'desired_goal': desired_goal}
 
         return obs, reward, done, info
 
@@ -167,10 +169,10 @@ class CtmEnv(gym.GoalEnv):
 
             if self.render_obj.model == 'dominant_stiffness':
                 self.render_obj.publish_joints(self.rep_obj.get_q())
-                #self.render_obj.publish_segments(self.model.get_r())
+                # self.render_obj.publish_segments(self.model.get_r())
                 self.render_obj.publish_transforms(self.model.get_r_transforms())
             elif self.render_obj.model == 'exact':
-                #self.render_obj.publish_segments(self.model.get_r())
+                # self.render_obj.publish_segments(self.model.get_r())
                 self.render_obj.publish_transforms(self.model.get_r_transforms())
             else:
                 print("Incorrect model selected, no rendering")
@@ -180,7 +182,7 @@ class CtmEnv(gym.GoalEnv):
 
     def update_goal_tolerance(self, N_ts):
         self.goal_tol_obj.update(N_ts)
-    
+
     def get_obs_dim(self):
         return self.rep_obj.obs_dim
 
