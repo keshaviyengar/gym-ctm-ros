@@ -70,7 +70,7 @@ class GoalTolerance(object):
 class CtmEnv(gym.GoalEnv):
     def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps,
                  n_substeps,
-                 goal_tolerance_parameters, joint_representation, relative_q, initial_q, render):
+                 goal_tolerance_parameters, joint_representation, relative_q, initial_q, resample_joints, render):
 
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
