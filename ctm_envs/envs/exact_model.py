@@ -6,7 +6,7 @@ from ctm_envs.envs.model_base import ModelBase
 
 
 class ExactModel(ModelBase):
-    def __init__(self, tube_parameters, ros=False):
+    def __init__(self, tube_parameters):
         self.r = []
         self.r_transforms = []
         super(ExactModel, self).__init__(tube_parameters, ros=False)

@@ -80,11 +80,21 @@ class CtmRender:
             if gap < 0.00001:
                 gap = 0.00001
 
-            marker.pose.position.x = px
-            marker.pose.position.y = py
-            marker.pose.position.z = pz
-
             pr = R.from_dcm(backbonePt[:3, :3])
+            qx = pr.as_quat()[0]
+            qy = pr.as_quat()[1]
+            qz = pr.as_quat()[2]
+            qw = pr.as_quat()[3]
+
+            if j in [0,9,19]:
+                # basically (0, 0, 1) rotated by the quaternion then times half the gap is the displaced amount
+                marker.pose.position.x = px+gap / 2 * (2 * qw * qy-2 * qz * qx)
+                marker.pose.position.y = py+gap / 2 * (2 * qw * qx+2 * qy * qz)
+                marker.pose.position.z = pz+gap / 2 * (1+2 * qx * qx-2 * qy * qy)
+            else:
+                marker.pose.position.x = px
+                marker.pose.position.y = py
+                marker.pose.position.z = pz
 
             marker.pose.orientation.x = pr.as_quat()[0]
             marker.pose.orientation.y = pr.as_quat()[1]
@@ -97,7 +107,7 @@ class CtmRender:
 
             if j == nPts:
                 marker.scale.z = 0.00000005
-            elif j == 1:
+            elif j in [0,9,19]:
                 marker.scale.z = gap
             else:
                 marker.scale.z = gap * 2
