@@ -9,8 +9,8 @@ This representation is the simple {beta_i, alpha_i} representation
 
 
 class BasicObs(ObsBase):
-    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q):
-        super().__init__(tube_parameters, goal_tolerance_parameters, initial_q, relative_q)
+    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q, ext_tol):
+        super().__init__(tube_parameters, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
         self.goal_dim = 3
         self.obs_dim = 0
         print("Basic joint representation used")

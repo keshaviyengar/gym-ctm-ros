@@ -95,6 +95,9 @@ class ExactModel(ModelBase):
                 tip_pos[k] = 0
         self.r = r
         self.r_transforms = r_transforms
+        if len(r) == 0:
+            print("r is zero. Relevant debug info:")
+            print("q: ", q)
         return r[-1]
 
     def ode_eq(self, y, s, ux_0, uy_0, ei, gj):

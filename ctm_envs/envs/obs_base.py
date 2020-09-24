@@ -14,7 +14,7 @@ q: Current joint as relative joint representation
 
 
 class ObsBase:
-    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q):
+    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q, ext_tol):
         self.tubes = tube_parameters
         self.tube_lengths = [i.L for i in self.tubes]
         self.goal_tolerance_parameters = goal_tolerance_parameters
@@ -30,7 +30,7 @@ class ObsBase:
         alpha_low = np.full(self.num_tubes, -np.pi)
         alpha_high = np.full(self.num_tubes, np.pi)
         # TODO: Add zero tol to beta low
-        beta_low = -np.array(self.tube_lengths)
+        beta_low = -np.array(self.tube_lengths) + ext_tol
         beta_high = np.full(self.num_tubes, 0)
 
         self.q_space = gym.spaces.Box(low=np.concatenate((beta_low, alpha_low)),

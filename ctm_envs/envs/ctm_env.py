@@ -81,6 +81,8 @@ class CtmEnv(gym.GoalEnv):
             self.tubes.append(TubeParameters(**tube_args))
             self.tube_lengths.append(tube_args['length'])
 
+        self.tube_lengths = self.tube_lengths
+
         self.action_length_limit = action_length_limit
         self.action_rotation_limit = action_rotation_limit
 
@@ -94,10 +96,12 @@ class CtmEnv(gym.GoalEnv):
         self.max_episode_steps = max_episode_steps
         self.n_substeps = n_substeps
 
+        ext_tol = 0
         if model == 'dominant_stiffness':
             self.model = DominantStiffnessModel(self.tubes)
         elif model == 'exact':
             self.model = ExactModel(self.tubes)
+            ext_tol = 1e-4
         else:
             print("Model unavailable")
 
@@ -109,14 +113,14 @@ class CtmEnv(gym.GoalEnv):
             self.render_obj = None
 
         if joint_representation == 'basic':
-            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
+            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
         elif joint_representation == 'trig':
-            self.rep_obj = TrigObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
+            self.rep_obj = TrigObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
         elif joint_representation == 'polar':
-            self.rep_obj = PolarObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
+            self.rep_obj = PolarObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
         else:
             print("Incorrect representation selected, defaulting to basic.")
-            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q)
+            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
 
         self.goal_tol_obj = GoalTolerance(goal_tolerance_parameters)
         self.t = 0
