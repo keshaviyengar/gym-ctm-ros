@@ -103,7 +103,7 @@ class ObsBase:
     def get_q(self):
         return self.q
 
-    def qrel2abs(self, q):
+    def qabs2rel(self, q):
         betas = q[0:self.num_tubes]
         alphas = q[self.num_tubes:]
         # Compute difference
@@ -111,8 +111,7 @@ class ObsBase:
         rel_alphas = np.diff(alphas, prepend=alphas[0])
         return np.concatenate((rel_beta, rel_alphas))
 
-    def qabs2rel(self, q):
-        # Compute difference
+    def qrel2abs(self, q):
         rel_beta = q[0:self.num_tubes]
         rel_alpha = q[self.num_tubes:]
         betas = np.concatenate((rel_beta[0], rel_beta)).cumsum()
