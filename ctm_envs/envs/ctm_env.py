@@ -112,6 +112,8 @@ class CtmEnv(gym.GoalEnv):
         else:
             self.render_obj = None
 
+        self.r_df = None
+
         if joint_representation == 'basic':
             self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
         elif joint_representation == 'trig':
@@ -128,6 +130,7 @@ class CtmEnv(gym.GoalEnv):
 
     def reset(self):
         self.t = 0
+        self.r_df = None
         # Resample a desired goal and its associated q joint
         desired_q = self.rep_obj.sample_goal()
         desired_goal = self.model.forward_kinematics(desired_q)
@@ -166,6 +169,18 @@ class CtmEnv(gym.GoalEnv):
         return -(d > self.goal_tol_obj.get_tol()).astype(np.float32)
 
     def render(self, mode='human'):
+        if mode == 'save':
+            import pandas as pd
+            r = self.model.get_r()
+            t = np.empty((r.shape[0], 1))
+            t.fill(self.t)
+            if self.r_df is None:
+                self.r_df = pd.DataFrame(data=np.concatenate((t, r), axis=1), columns=['step', 'x', 'y', 'z'])
+            else:
+                df = pd.DataFrame(data=np.concatenate((t, r), axis=1), columns=['step', 'x', 'y', 'z'])
+                self.r_df = self.r_df.append(df, ignore_index=True)
+            self.r_df.to_csv('/home/keshav/play_episode_r.csv')
+
         if self.render_obj is not None:
             # TODO: Issue in pycharm, python 2 ros libaries can't be found. Run in terminal.
             self.render_obj.publish_desired_goal(self.rep_obj.get_desired_goal())
