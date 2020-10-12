@@ -8,6 +8,9 @@ from ctm_envs.envs.model_base import ModelBase
 class ExactModel(ModelBase):
     def __init__(self, tube_parameters):
         self.r = []
+        self.r1 = []
+        self.r2 = []
+        self.r3 = []
         self.r_transforms = []
         super(ExactModel, self).__init__(tube_parameters, ros=False)
 
@@ -98,6 +101,14 @@ class ExactModel(ModelBase):
         if len(r) == 0:
             print("r is zero. Relevant debug info:")
             print("q: ", q)
+        r1 = r
+        _, idx = min((val, idx) for (idx, val) in enumerate(abs(Length - segments.d_tip[1])))
+        r2 = r[:idx, :]
+        _, idx = min((val, idx) for (idx, val) in enumerate(abs(Length - segments.d_tip[2])))
+        r3 = r[:idx, :]
+        self.r1 = r1
+        self.r2 = r2
+        self.r3 = r3
         return r[-1]
 
     def ode_eq(self, y, s, ux_0, uy_0, ei, gj):
@@ -150,6 +161,9 @@ class ExactModel(ModelBase):
     def get_r(self):
         return self.r
 
+    def get_rs(self):
+        return self.r1, self.r2, self.r3
+
     def get_r_transforms(self):
         return self.r_transforms
 
@@ -179,6 +193,7 @@ class SegmentRobot(object):
 
         # position of tip of tubes
         d_tip = L + base
+        self.d_tip = d_tip  # used for splitting up tubes into individual tubes
         # positions where bending starts
         d_c = d_tip - L_c
         points = np.hstack((0, base, d_c, d_tip))

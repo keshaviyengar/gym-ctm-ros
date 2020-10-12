@@ -39,6 +39,9 @@ class GoalTolerance(object):
             print('Not a valid function, defaulting to constant')
             self.function = 'constant'
 
+        if self.function == 'constant':
+            self.init_tol = self.final_tol
+
         if self.function == 'linear':
             self.a = (self.final_tol - self.init_tol) / self.N_ts
             self.b = self.init_tol
@@ -171,14 +174,18 @@ class CtmEnv(gym.GoalEnv):
     def render(self, mode='human'):
         if mode == 'save':
             import pandas as pd
-            r = self.model.get_r()
-            t = np.empty((r.shape[0], 1))
+            r1, r2, r3 = self.model.get_rs()
+            r1_df = pd.DataFrame(data=r1, columns=['r1x', 'r1y', 'r1z'])
+            r2_df = pd.DataFrame(data=r2, columns=['r2x', 'r2y', 'r2z'])
+            r3_df = pd.DataFrame(data=r3, columns=['r3x', 'r3y', 'r3z'])
+            t = np.empty((r1.shape[0], 1))
             t.fill(self.t)
+            t_df = pd.DataFrame(data=t, columns=['timestep'])
             if self.r_df is None:
-                self.r_df = pd.DataFrame(data=np.concatenate((t, r), axis=1), columns=['step', 'x', 'y', 'z'])
+                self.r_df = pd.concat([t_df, r1_df, r2_df, r3_df], axis=1)
             else:
-                df = pd.DataFrame(data=np.concatenate((t, r), axis=1), columns=['step', 'x', 'y', 'z'])
-                self.r_df = self.r_df.append(df, ignore_index=True)
+                r_df = pd.concat([t_df, r1_df, r2_df, r3_df], axis=1)
+                self.r_df = self.r_df.append(r_df, ignore_index=True)
             self.r_df.to_csv('/home/keshav/play_episode_r.csv')
 
         if self.render_obj is not None:
