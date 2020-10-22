@@ -14,10 +14,15 @@ q: Current joint as relative joint representation
 
 
 class ObsBase:
-    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q, ext_tol):
+    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol):
         self.tubes = tube_parameters
         self.tube_lengths = [i.L for i in self.tubes]
         self.goal_tolerance_parameters = goal_tolerance_parameters
+        self.noise_parameters = noise_parameters
+        extension_std_noise = np.full(len(self.tubes), noise_parameters['extension_std'])
+        rotation_std_noise = np.full(len(self.tubes), noise_parameters['rotation_std'])
+        self.q_std_noise = np.concatenate((extension_std_noise, rotation_std_noise))
+        self.tracking_std_noise = np.full(3, noise_parameters['tracking_std'])
         # Keep q as absolute joint positions, convert to relative as needed and store as absolute
         self.q = initial_q
         self.relative_q = relative_q
@@ -77,6 +82,10 @@ class ObsBase:
         return q_constrain
 
     def get_obs(self, desired_goal, achieved_goal, goal_tolerance, relative=False):
+        # Add noise to q, rotation and extension (encoder noise)
+        noisy_q = np.random.normal(self.q, self.q_std_noise)
+        # Add noise to achieved goal (tracker noise)
+        noisy_achieved_goal = np.random.normal(achieved_goal, self.tracking_std_noise)
         # Relative joint representation
         if relative:
             rep = self.joint2rep(self.qabs2rel(self.q))

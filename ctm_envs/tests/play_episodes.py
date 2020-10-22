@@ -10,7 +10,7 @@ from stable_baselines.her.utils import HERGoalEnvWrapper
 if __name__ == '__main__':
     # Env and model names and paths
     env_id = "CTR-Reach-v0"
-    model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/cras_exp_1/learned_policy/500000_saved_model.pkl"
+    model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/cras_exp_3/learned_policy/500000_saved_model.pkl"
 
     # Create envs and model
     env = HERGoalEnvWrapper(gym.make(env_id))

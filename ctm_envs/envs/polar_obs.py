@@ -10,9 +10,9 @@ d_i = {d_Re,i, d_Im,i} = {(k - B_i/L_i)cos(alpha_i), (k - B_i/L_i)sin(alpha_i)}
 
 
 class PolarObs(ObsBase):
-    def __init__(self, tube_parameters, goal_tolerance_parameters, initial_q, relative_q, ext_tol, k=1):
+    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol, k=1):
         self.k = k
-        super().__init__(tube_parameters, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
+        super().__init__(tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol)
         print("Polar joint representation used")
 
     def get_observation_space(self):
