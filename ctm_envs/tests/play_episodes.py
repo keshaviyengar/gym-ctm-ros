@@ -10,7 +10,10 @@ from stable_baselines.her.utils import HERGoalEnvWrapper
 if __name__ == '__main__':
     # Env and model names and paths
     env_id = "CTR-Reach-v0"
-    model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/cras_exp_3/learned_policy/500000_saved_model.pkl"
+    # env_id = "CTR-Reach-Noisy-v0"
+    exp_id = "cras_exp_1_new"
+
+    model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
 
     # Create envs and model
     env = HERGoalEnvWrapper(gym.make(env_id))
@@ -24,12 +27,16 @@ if __name__ == '__main__':
     desired_goals = np.array([])
     time_taken = np.array([])
 
+    # Run an initial number of random actions to randomize starting position
+    obs = env.reset()
+    for t in range(100):
+        env.step(env.action_space.sample())  # take a random action
+
     # Run random episodes and save sequence of actions and states to plot in matlab
     episode_reward = 0
     ep_len = 0
     obs = env.reset()
     env.render('save')
-
     q_joints = np.append(q_joints, env.convert_obs_to_dict(obs)['observation'][:9])
     achieved_goals = np.append(achieved_goals, env.convert_obs_to_dict(obs)['achieved_goal'])
     desired_goals = np.append(desired_goals, env.convert_obs_to_dict(obs)['desired_goal'])
@@ -60,4 +67,5 @@ if __name__ == '__main__':
     ag_df = pd.DataFrame(data=achieved_goals, columns=['ag_x', 'ag_y', 'ag_z'])
     dg_df = pd.DataFrame(data=desired_goals, columns=['dg_x', 'dg_y', 'dg_z'])
     full_df = pd.concat([joints_df, ag_df, dg_df], axis=1, join='inner')
-    full_df.to_csv('/home/keshav/play_episode.csv')
+    full_df.to_csv('/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + exp_id + '_traj_3.csv')
+    # full_df.to_csv('/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + exp_id + '_noisy_traj.csv')

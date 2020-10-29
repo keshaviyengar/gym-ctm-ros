@@ -88,23 +88,23 @@ class ObsBase:
         noisy_achieved_goal = np.random.normal(achieved_goal, self.tracking_std_noise)
         # Relative joint representation
         if relative:
-            rep = self.joint2rep(self.qabs2rel(self.q))
+            rep = self.joint2rep(self.qabs2rel(noisy_q))
         else:
-            rep = self.joint2rep(self.q)
+            rep = self.joint2rep(noisy_q)
         if self.inc_tol_obs:
             self.obs = {
                 'desired_goal': desired_goal,
-                'achieved_goal': achieved_goal,
+                'achieved_goal': noisy_achieved_goal,
                 'observation': np.concatenate(
-                    (rep, desired_goal - achieved_goal, np.array([goal_tolerance]))
+                    (rep, desired_goal - noisy_achieved_goal, np.array([goal_tolerance]))
                 )
             }
         else:
             self.obs = {
                 'desired_goal': desired_goal,
-                'achieved_goal': achieved_goal,
+                'achieved_goal': noisy_achieved_goal,
                 'observation': np.concatenate(
-                    (rep, desired_goal - achieved_goal)
+                    (rep, desired_goal - noisy_achieved_goal)
                 )
             }
         return self.obs

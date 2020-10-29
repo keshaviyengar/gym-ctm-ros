@@ -106,7 +106,7 @@ register(
         'noise_parameters': {
             # 0.001 is the gear ratio
             # 0.001 is also the tracking std deviation for now for testing.
-            'rotation_std': 1, 'extension_std': 0.001 * 1.0, 'tracking_std': 0.0008
+            'rotation_std': np.deg2rad(1.0), 'extension_std': 0.001 * np.deg2rad(1.0), 'tracking_std': 0.0008
         },
         'joint_representation': 'trig',
         # Format is [beta_0, beta_1, ..., beta_n, alpha_0, ..., alpha_n]

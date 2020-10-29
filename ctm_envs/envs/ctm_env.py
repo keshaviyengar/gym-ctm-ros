@@ -98,6 +98,8 @@ class CtmEnv(gym.GoalEnv):
 
         self.max_episode_steps = max_episode_steps
         self.n_substeps = n_substeps
+        self.resample_joints = resample_joints
+        self.desired_q = []
 
         ext_tol = 0
         if model == 'dominant_stiffness':
@@ -134,12 +136,15 @@ class CtmEnv(gym.GoalEnv):
         self.t = 0
         self.observation_space = self.rep_obj.get_observation_space()
 
-    def reset(self):
+    def reset(self, goal=None):
         self.t = 0
         self.r_df = None
-        # Resample a desired goal and its associated q joint
-        desired_q = self.rep_obj.sample_goal()
-        desired_goal = self.model.forward_kinematics(desired_q)
+        if goal is None:
+            # Resample a desired goal and its associated q joint
+            self.desired_q = self.rep_obj.sample_goal()
+            desired_goal = self.model.forward_kinematics(self.desired_q)
+        else:
+            desired_goal = goal
         achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
         return obs
@@ -165,7 +170,7 @@ class CtmEnv(gym.GoalEnv):
         info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
                 'error': np.linalg.norm(desired_goal - achieved_goal),
                 'goal_tolerance': self.goal_tol_obj.get_tol(), 'achieved_goal': achieved_goal,
-                'desired_goal': desired_goal}
+                'desired_goal': desired_goal, 'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
 
         return obs, reward, done, info
 
@@ -175,6 +180,21 @@ class CtmEnv(gym.GoalEnv):
         return -(d > self.goal_tol_obj.get_tol()).astype(np.float32)
 
     def render(self, mode='human'):
+        if mode == 'inference':
+            import pandas as pd
+            r1, r2, r3 = self.model.get_rs()
+            r1_df = pd.DataFrame(data=r1, columns=['r1x', 'r1y', 'r1z'])
+            r2_df = pd.DataFrame(data=r2, columns=['r2x', 'r2y', 'r2z'])
+            r3_df = pd.DataFrame(data=r3, columns=['r3x', 'r3y', 'r3z'])
+            t = np.empty((r1.shape[0], 1))
+            t.fill(self.t)
+            t_df = pd.DataFrame(data=t, columns=['timestep'])
+            if self.r_df is None:
+                self.r_df = pd.concat([t_df, r1_df, r2_df, r3_df], axis=1)
+            else:
+                r_df = pd.concat([t_df, r1_df, r2_df, r3_df], axis=1)
+                self.r_df = self.r_df.append(r_df, ignore_index=True)
+
         if mode == 'save':
             import pandas as pd
             r1, r2, r3 = self.model.get_rs()
@@ -189,7 +209,7 @@ class CtmEnv(gym.GoalEnv):
             else:
                 r_df = pd.concat([t_df, r1_df, r2_df, r3_df], axis=1)
                 self.r_df = self.r_df.append(r_df, ignore_index=True)
-            self.r_df.to_csv('/home/keshav/play_episode_r.csv')
+            self.r_df.to_csv('/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/temp_shape.csv')
 
         if self.render_obj is not None:
             # TODO: Issue in pycharm, python 2 ros libaries can't be found. Run in terminal.
