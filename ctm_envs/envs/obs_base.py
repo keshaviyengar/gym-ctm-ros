@@ -34,7 +34,6 @@ class ObsBase:
         # Q space
         alpha_low = np.full(self.num_tubes, -np.pi)
         alpha_high = np.full(self.num_tubes, np.pi)
-        # TODO: Add zero tol to beta low
         beta_low = -np.array(self.tube_lengths) + ext_tol
         beta_high = np.full(self.num_tubes, 0)
 

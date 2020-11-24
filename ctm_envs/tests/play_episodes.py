@@ -11,7 +11,7 @@ if __name__ == '__main__':
     # Env and model names and paths
     env_id = "CTR-Reach-v0"
     # env_id = "CTR-Reach-Noisy-v0"
-    exp_id = "cras_exp_1_new"
+    exp_id = "cras_exp_6"
 
     model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
 

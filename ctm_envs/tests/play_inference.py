@@ -17,7 +17,7 @@ class CTMPathFollower(object):
         self.exp_id = exp_id
         self.trajectory_type = trajectory_type
         # Load model and environment
-        self.env = HERGoalEnvWrapper(gym.make(env_id, kwargs={'noise_parameters': noise_parameters}))
+        self.env = HERGoalEnvWrapper(gym.make(env_id, **{'noise_parameters': noise_parameters}))
         self.model = HER.load(model_path, env=self.env)
         self.episode_timesteps = episode_timesteps
 
@@ -119,14 +119,14 @@ class CTMPathFollower(object):
         goals_df = pd.concat([ag_goals_df, dg_goals_df], axis=1, join='inner')
         if name is None:
             goals_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path_following_' + self.exp_id + '_goals.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_goals.csv')
             self.shape_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path_following_' + self.exp_id + '_shape.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_shape.csv')
         else:
             goals_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/path_following/' + self.trajectory_type + '_path_following_' + self.exp_id + '_ ' + name + '_goals.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_goals.csv')
             self.shape_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_shape.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type +  '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_shape.csv')
 
 
 def noise_sensitivity_analysis(env_id, model_path, trajectory_type, episode_timesteps, tracking_noise_intervals,
@@ -142,7 +142,7 @@ def noise_sensitivity_analysis(env_id, model_path, trajectory_type, episode_time
                                              noise_parameters)
             # Run path planning experiment and get error vector
             while not traj_inference.traj_complete:
-                traj_inference.play_episode(render_mode='human')
+                traj_inference.play_episode(render_mode='inference')
                 if trajectory_type == "circle":
                     traj_inference.circle_trajectory_update()
                 elif trajectory_type == 'line':
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     # Simple Path Following
     # env_id = "CTR-Reach-v0"
     env_id = "CTR-Reach-Noisy-v0"
-    exp_id = "cras_exp_6"
+    exp_id = "cras_exp_8"
     model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
     episode_timesteps = 20
     noise_parameters = {'rotation_std': np.deg2rad(1.0), 'extension_std': 0.001 * np.deg2rad(1.0),
@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     rospy.init_node("ctm_path_following")
 
-    trajectory_type = "circle"
+    trajectory_type = "line"
     traj_inference = CTMPathFollower(env_id, exp_id, model_path, trajectory_type, episode_timesteps,
                                      noise_parameters)
 
@@ -174,4 +174,17 @@ if __name__ == '__main__':
         elif trajectory_type == 'line':
             traj_inference.line_trajectory_update()
 
-    traj_inference.save_data()
+    traj_inference.save_data('noise')
+
+    # Noise sensitivity
+    # env_id = "CTR-Reach-Noisy-v0"
+    # exp_id = "cras_exp_8"
+    # model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
+    # episode_timesteps = 20
+    # trajectory_type = 'line'
+    # tracking_noise_intervals = [0.0, 0.0004, 0.0008, 0.0012, 0.0016]
+    # encoder_noise_intervals = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5]
+
+    # rospy.init_node("ctm_path_following")
+
+    # noise_sensitivity_analysis(env_id, model_path, trajectory_type, episode_timesteps, tracking_noise_intervals, encoder_noise_intervals)

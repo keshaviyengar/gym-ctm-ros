@@ -10,9 +10,9 @@ from stable_baselines.her.utils import HERGoalEnvWrapper
 # Aim of this script is to run through a number of episodes, returns the error statistics
 if __name__ == '__main__':
     # Env and model names and paths
-    # env_id = "CTR-Reach-v0"
-    env_id = "CTR-Reach-Noisy-v0"
-    exp_id = "cras_exp_8"
+    env_id = "CTR-Reach-v0"
+    # env_id = "CTR-Reach-Noisy-v0"
+    exp_id = "cras_exp_6"
     model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
 
     env = HERGoalEnvWrapper(gym.make(env_id))
@@ -51,6 +51,7 @@ if __name__ == '__main__':
                 alpha_errors = np.append(alpha_errors, np.linalg.norm(q_alpha_desired - q_alpha_achieved))
                 break
 
+    print('mean_errors: ', np.mean(errors))
     eval_df = pd.DataFrame(data=np.column_stack((errors, B_errors, alpha_errors)), columns=['errors', 'B_errors', 'alpha_errors'])
     eval_df.to_csv(
         '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + exp_id + '_noisy_evaluation.csv')
