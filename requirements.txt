@@ -7,7 +7,6 @@ dill
 progressbar2
 mpi4py
 cloudpickle
-tensorflow==1.5.0
 click
 opencv-python
 numpy
@@ -117,7 +116,7 @@ srdfdom==0.5.2
 stevedore==1.30.1
 tabulate==0.8.6
 tensorboard==1.13.1
-tensorflow==1.15.2
+tensorflow==1.15.4
 tensorflow-estimator==1.13.0
 tensorflow-probability==0.6.0
 termcolor==1.1.0

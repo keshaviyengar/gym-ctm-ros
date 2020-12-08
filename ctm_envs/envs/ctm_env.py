@@ -7,6 +7,8 @@ from ctm_envs.envs.polar_obs import PolarObs
 from ctm_envs.envs.dominant_stiffness_model import DominantStiffnessModel
 from ctm_envs.envs.exact_model import ExactModel
 
+from pyquaternion import Quaternion
+
 
 class TubeParameters(object):
     def __init__(self, length, length_curved, outer_diameter, inner_diameter, stiffness, torsional_stiffness,
@@ -26,53 +28,101 @@ class TubeParameters(object):
         self.k = k
 
 
+# TODO: Seperate out position and orientation tolerances. This is quite ugly, can do in a better way.
 class GoalTolerance(object):
-    def __init__(self, goal_tolerance_parameters):
-        self.goal_tolerance_parameters = goal_tolerance_parameters
-        self.inc_tol_obs = self.goal_tolerance_parameters['inc_tol_obs']
-        self.init_tol = self.goal_tolerance_parameters['initial_tol']
-        self.final_tol = self.goal_tolerance_parameters['final_tol']
-        self.N_ts = self.goal_tolerance_parameters['N_ts']
-        self.function = self.goal_tolerance_parameters['function']
+    def __init__(self, pos_tolerance_parameters, orient_tolerance_parameters):
+        self.pos_tolerance_parameters = pos_tolerance_parameters
+        self.orient_tolerance_parameters = orient_tolerance_parameters
+
+        # position parameters
+        self.pos_inc_tol_obs = self.pos_tolerance_parameters['inc_tol_obs']
+        self.pos_init_tol = self.pos_tolerance_parameters['initial_tol']
+        self.pos_final_tol = self.pos_tolerance_parameters['final_tol']
+        self.pos_N_ts = self.pos_tolerance_parameters['N_ts']
+        self.pos_function = self.pos_tolerance_parameters['function']
+
+        # orientation parameters
+        self.orient_inc_tol_obs = self.orient_tolerance_parameters['inc_tol_obs']
+        self.orient_init_tol = self.orient_tolerance_parameters['initial_tol']
+        self.orient_final_tol = self.orient_tolerance_parameters['final_tol']
+        self.orient_N_ts = self.orient_tolerance_parameters['N_ts']
+        self.orient_function = self.orient_tolerance_parameters['function']
+
         valid_functions = ['constant', 'linear', 'decay']
-        if self.function not in valid_functions:
-            print('Not a valid function, defaulting to constant')
-            self.function = 'constant'
-
-        if self.function == 'constant':
-            self.init_tol = self.final_tol
-
-        if self.function == 'linear':
-            self.a = (self.final_tol - self.init_tol) / self.N_ts
-            self.b = self.init_tol
-
-        if self.function == 'decay':
-            self.a = self.init_tol
-            self.r = 1 - np.power((self.final_tol / self.init_tol), 1 / self.N_ts)
-
-        self.current_tol = self.init_tol
-
-    def update(self, training_step):
-        if (self.function == 'linear') and (training_step <= self.N_ts):
-            self.current_tol = self.linear_function(training_step)
-        elif (self.function == 'decay') and (training_step <= self.N_ts):
-            self.current_tol = self.decay_function(training_step)
+        # Set parameters for function
+        if self.pos_function in valid_functions:
+            if self.pos_function == valid_functions[0]:
+                self.pos_init_tol = self.pos_final_tol
+        if self.pos_function == valid_functions[1]:
+            self.pos_a = (self.pos_final_tol - self.pos_init_tol) / self.pos_N_ts
+            self.pos_b = self.pos_init_tol
+        if self.pos_function == valid_functions[2]:
+            self.pos_a = self.pos_init_tol
+            self.pos_r = 1 - np.power((self.pos_final_tol / self.pos_init_tol), 1 / self.pos_N_ts)
         else:
-            self.current_tol = self.final_tol
+            print('Not a valid function, defaulting to constant')
+            self.pos_function = 'constant'
+            self.pos_init_tol = self.pos_final_tol
 
-    def get_tol(self):
-        return self.current_tol
+        # Set parameters for function
+        if self.orient_function in valid_functions:
+            if self.orient_function == valid_functions[0]:
+                self.orient_init_tol = self.orient_final_tol
+        if self.orient_function == valid_functions[1]:
+            self.orient_a = (self.orient_final_tol - self.orient_init_tol) / self.orient_N_ts
+            self.orient_b = self.orient_init_tol
+        if self.orient_function == valid_functions[2]:
+            self.orient_a = self.orient_init_tol
+            self.orient_r = 1 - np.power((self.orient_final_tol / self.orient_init_tol), 1 / self.orient_N_ts)
+        else:
+            print('Not a valid function, defaulting to constant')
+            self.orient_function = 'constant'
+            self.orient_init_tol = self.orient_final_tol
 
-    def linear_function(self, training_step):
-        return self.a * training_step + self.b
+        self.pos_current_tol = self.pos_init_tol
+        self.orient_current_tol = self.orient_init_tol
 
-    def decay_function(self, training_step):
-        return self.a * np.power(1 - self.r, training_step)
+    # TODO: Function to do setting of function values and tolerances.
+    def update(self, training_step):
+        # Update position tolerance
+        if (self.pos_function == 'constant') and (training_step <= self.pos_N_ts):
+            self.pos_current_tol = self.pos_final_tol
+        if (self.pos_function == 'linear') and (training_step <= self.pos_N_ts):
+            self.pos_current_tol = self.linear_function(self.pos_a, self.pos_b, training_step)
+        if (self.pos_function == 'decay') and (training_step <= self.pos_N_ts):
+            self.pos_current_tol = self.decay_function(self.pos_a, self.pos_r, training_step)
+        else:
+            self.pos_current_tol = self.pos_final_tol
+
+        # Update orientation tolerance
+        if (self.orient_function == 'constant') and (training_step <= self.orient_N_ts):
+            self.orient_current_tol = self.orient_final_tol
+        if (self.orient_function == 'linear') and (training_step <= self.orient_N_ts):
+            self.orient_current_tol = self.linear_function(self.orient_a, self.orient_b, training_step)
+        if (self.orient_function == 'decay') and (training_step <= self.orient_N_ts):
+            self.orient_current_tol = self.decay_function(self.orient_a, self.orient_r, training_step)
+        else:
+            self.orient_current_tol = self.orient_final_tol
+
+    def get_pos_tol(self):
+        return self.pos_current_tol
+
+    def get_orient_tol(self):
+        return self.orient_current_tol
+
+    @staticmethod
+    def linear_function(a, b, training_step):
+        return a * training_step + b
+
+    @staticmethod
+    def decay_function(a, r, training_step):
+        return a * np.power(1 - r, training_step)
 
 
 class CtmEnv(gym.GoalEnv):
     def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps,
-                 n_substeps, goal_tolerance_parameters, noise_parameters, joint_representation, relative_q, initial_q,
+                 n_substeps, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                 joint_representation, relative_q, initial_q,
                  resample_joints, render):
 
         self.num_tubes = len(tube_parameters.keys())
@@ -120,19 +170,21 @@ class CtmEnv(gym.GoalEnv):
         self.r_df = None
 
         if joint_representation == 'basic':
-            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, noise_parameters, initial_q, relative_q,
-                                    ext_tol)
+            self.rep_obj = BasicObs(self.tubes, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                                    initial_q, relative_q, ext_tol)
         elif joint_representation == 'trig':
-            self.rep_obj = TrigObs(self.tubes, goal_tolerance_parameters, noise_parameters, initial_q, relative_q,
-                                   ext_tol)
+            self.rep_obj = TrigObs(self.tubes, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                                   initial_q, relative_q, ext_tol)
         elif joint_representation == 'polar':
-            self.rep_obj = PolarObs(self.tubes, goal_tolerance_parameters, noise_parameters, initial_q, relative_q,
+            self.rep_obj = PolarObs(self.tubes, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                                    initial_q, relative_q,
                                     ext_tol)
         else:
             print("Incorrect representation selected, defaulting to basic.")
-            self.rep_obj = BasicObs(self.tubes, goal_tolerance_parameters, initial_q, relative_q, ext_tol)
+            self.rep_obj = BasicObs(self.tubes, pos_tolerance_parameters, orient_tolerance_parameters,
+                                    initial_q, relative_q, ext_tol)
 
-        self.goal_tol_obj = GoalTolerance(goal_tolerance_parameters)
+        self.goal_tol_obj = GoalTolerance(pos_tolerance_parameters, orient_tolerance_parameters)
         self.t = 0
         self.observation_space = self.rep_obj.get_observation_space()
 
@@ -142,11 +194,13 @@ class CtmEnv(gym.GoalEnv):
         if goal is None:
             # Resample a desired goal and its associated q joint
             self.desired_q = self.rep_obj.sample_goal()
-            desired_goal = self.model.forward_kinematics(self.desired_q)
+            desired_position, desired_orientation = self.model.forward_kinematics(self.desired_q)
         else:
-            desired_goal = goal
-        achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
-        obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
+            desired_position = goal[:3]
+            desired_orientation = goal[3:]
+        achieved_position, achieved_orientation = self.model.forward_kinematics(self.rep_obj.get_q())
+        obs = self.rep_obj.get_obs(desired_position, desired_orientation, achieved_position, achieved_orientation,
+                                   self.goal_tol_obj.get_pos_tol(), self.goal_tol_obj.get_orient_tol())
         return obs
 
     def seed(self, seed=None):
@@ -160,24 +214,52 @@ class CtmEnv(gym.GoalEnv):
             self.rep_obj.set_action(action)
 
         # Compute FK
-        achieved_goal = self.model.forward_kinematics(self.rep_obj.q)
-        desired_goal = self.rep_obj.get_desired_goal()
+        achieved_position, achieved_orientation = self.model.forward_kinematics(self.rep_obj.q)
+        desired_position, desired_orientation = self.rep_obj.get_desired_goal()
         self.t += 1
-        reward = self.compute_reward(achieved_goal, desired_goal, dict())
+        reward = self.compute_reward(np.concatenate((achieved_position, achieved_orientation)),
+                                     np.concatenate((desired_position, desired_orientation)), dict())
         done = (reward == 0) or (self.t >= self.max_episode_steps)
-        obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
-
-        info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
-                'error': np.linalg.norm(desired_goal - achieved_goal),
-                'goal_tolerance': self.goal_tol_obj.get_tol(), 'achieved_goal': achieved_goal,
-                'desired_goal': desired_goal, 'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
+        obs = self.rep_obj.get_obs(desired_position, desired_orientation, achieved_position, achieved_orientation,
+                                   self.goal_tol_obj.get_pos_tol(), self.goal_tol_obj.get_orient_tol())
+        pos_error, orient_error = self.compute_error(achieved_position, achieved_orientation, achieved_position,
+                                                     achieved_orientation)
+        info = {'is_success': self.compute_is_success(achieved_position, achieved_orientation, desired_position,
+                                                      desired_orientation),
+                'error_pos': pos_error, 'error_orientation': orient_error,
+                'position_tolerance': self.goal_tol_obj.get_pos_tol(),
+                'orientation_tolerance': self.goal_tol_obj.get_orient_tol(), 'achieved_position': achieved_position,
+                'desired_position': desired_position, 'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
 
         return obs, reward, done, info
 
     def compute_reward(self, achieved_goal, desired_goal, info):
         assert achieved_goal.shape == desired_goal.shape
-        d = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
-        return -(d > self.goal_tol_obj.get_tol()).astype(np.float32)
+        achieved_pos = achieved_goal[:3]
+        desired_pos = desired_goal[:3]
+        achieved_orient = achieved_goal[3:]
+        desired_orient = desired_goal[3:]
+        d = np.linalg.norm(achieved_pos - desired_pos, axis=-1)
+        q_achieved = Quaternion(achieved_orient)
+        q_desired = Quaternion(desired_orient)
+        o = Quaternion.absolute_distance(q_achieved, q_desired)
+        return (-(d > self.goal_tol_obj.get_pos_tol()).astype(np.float32)) + (-o > self.goal_tol_obj.get_orient_tol())
+
+    def compute_is_success(self, achieved_position, achieved_orientation, desired_position, desired_orientation):
+        d = np.linalg.norm(achieved_position - desired_position, axis=-1)
+        q_achieved = Quaternion(achieved_orientation)
+        q_desired = Quaternion(desired_orientation)
+        o = Quaternion.absolute_distance(q_achieved, q_desired)
+        return (d < self.goal_tol_obj.get_pos_tol()).astype(
+            np.float32) and o < self.goal_tol_obj.get_orient_tol().astype(np.float32)
+
+    @staticmethod
+    def compute_error(achieved_position, achieved_orientation, desired_position, desired_orientation):
+        position_error = np.linalg.norm(achieved_position - desired_position)
+        q_achieved = Quaternion(achieved_orientation)
+        q_desired = Quaternion(desired_orientation)
+        orientation_error = Quaternion.absolute_distance(q_achieved, q_desired)
+        return position_error, orientation_error
 
     def render(self, mode='human'):
         if mode == 'inference':

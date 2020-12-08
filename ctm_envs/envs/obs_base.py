@@ -14,10 +14,12 @@ q: Current joint as relative joint representation
 
 
 class ObsBase:
-    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol):
+    def __init__(self, tube_parameters, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                 initial_q, relative_q, ext_tol):
         self.tubes = tube_parameters
         self.tube_lengths = [i.L for i in self.tubes]
-        self.goal_tolerance_parameters = goal_tolerance_parameters
+        self.pos_tolerance_parameters = pos_tolerance_parameters
+        self.orient_tolerance_parameters = orient_tolerance_parameters
         self.noise_parameters = noise_parameters
         extension_std_noise = np.full(len(self.tubes), noise_parameters['extension_std'])
         rotation_std_noise = np.full(len(self.tubes), noise_parameters['rotation_std'])
@@ -29,7 +31,8 @@ class ObsBase:
 
         self.num_tubes = len(tube_parameters)
 
-        self.inc_tol_obs = self.goal_tolerance_parameters['inc_tol_obs']
+        self.inc_tol_obs = self.pos_tolerance_parameters['inc_tol_obs'] or self.orient_tolerance_parameters[
+            "inc_tol_obs"]
 
         # Q space
         alpha_low = np.full(self.num_tubes, -np.pi)
@@ -80,11 +83,19 @@ class ObsBase:
         q_constrain = np.concatenate((betas, alphas))
         return q_constrain
 
-    def get_obs(self, desired_goal, achieved_goal, goal_tolerance, relative=False):
+    # TODO: Ensure Compatability
+    # New observation with orientation
+    def get_obs(self, desired_position, desired_orientation, achieved_position, achieved_orientation,
+                position_tolerance, orientation_tolerance,
+                relative=False):
         # Add noise to q, rotation and extension (encoder noise)
         noisy_q = np.random.normal(self.q, self.q_std_noise)
         # Add noise to achieved goal (tracker noise)
-        noisy_achieved_goal = np.random.normal(achieved_goal, self.tracking_std_noise)
+        noisy_achieved_position = np.random.normal(achieved_position, self.tracking_std_noise)
+        # Add in noisy achieved orientation
+        noisy_achieved_orientation = achieved_orientation
+        achieved_pose = np.concatenate((noisy_achieved_position, noisy_achieved_orientation))
+        desired_pose = np.concatenate((desired_position, desired_orientation))
         # Relative joint representation
         if relative:
             rep = self.joint2rep(self.qabs2rel(noisy_q))
@@ -92,18 +103,19 @@ class ObsBase:
             rep = self.joint2rep(noisy_q)
         if self.inc_tol_obs:
             self.obs = {
-                'desired_goal': desired_goal,
-                'achieved_goal': noisy_achieved_goal,
+                'desired_goal': desired_pose,
+                'achieved_goal': achieved_pose,
                 'observation': np.concatenate(
-                    (rep, desired_goal - noisy_achieved_goal, np.array([goal_tolerance]))
+                    (rep, desired_pose - achieved_pose, np.array([position_tolerance]),
+                     np.array([orientation_tolerance]))
                 )
             }
         else:
             self.obs = {
-                'desired_goal': desired_goal,
-                'achieved_goal': noisy_achieved_goal,
+                'desired_goal': desired_pose,
+                'achieved_goal': achieved_pose,
                 'observation': np.concatenate(
-                    (rep, desired_goal - noisy_achieved_goal)
+                    (rep, desired_pose - achieved_pose)
                 )
             }
         return self.obs

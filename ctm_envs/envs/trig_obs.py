@@ -9,31 +9,36 @@ This representation is the trigonometric / cylindrical {cos(alpha)_i, sin(alpha_
 
 
 class TrigObs(ObsBase):
-    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol):
-        super().__init__(tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol)
+    def __init__(self, tube_parameters, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                 initial_q, relative_q, ext_tol):
+        super().__init__(tube_parameters, pos_tolerance_parameters, orient_tolerance_parameters, noise_parameters,
+                         initial_q, relative_q, ext_tol)
         self.goal_dim = 3
         self.obs_dim = 0
         print("Trig joint representation used")
 
     def get_observation_space(self):
-        initial_tol = self.goal_tolerance_parameters['initial_tol']
-        final_tol = self.goal_tolerance_parameters['final_tol']
+        pos_initial_tol = self.pos_tolerance_parameters['initial_tol']
+        pos_final_tol = self.pos_tolerance_parameters['final_tol']
+        orient_initial_tol = self.orient_tolerance_parameters['initial_tol']
+        orient_final_tol = self.orient_tolerance_parameters['final_tol']
         rep_space = self.get_rep_space()
 
         if self.inc_tol_obs:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-1, -1, -1, initial_tol])))
+                (rep_space.low, np.array([-1, -1, -1, pos_initial_tol, orient_initial_tol])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([1, 1, 1, final_tol])))
+                (rep_space.high, np.array([1, 1, 1, pos_final_tol, orient_final_tol])))
         else:
             obs_space_low = np.concatenate(
                 (rep_space.low, np.array([-1, -1, -1])))
             obs_space_high = np.concatenate(
                 (rep_space.high, np.array([1, 1, 1])))
+
         observation_space = gym.spaces.Dict(dict(
-            desired_goal=gym.spaces.Box(low=np.array([0, 0, 0]), high=np.array([1, 1, 1]),
+            desired_goal=gym.spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1,  1, 1, 1, 1]),
                                         dtype="float32"),
-            achieved_goal=gym.spaces.Box(low=np.array([0, 0, 0]), high=np.array([1, 1, 1]),
+            achieved_goal=gym.spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1, 1, 1, 1, 1]),
                                          dtype="float32"),
             observation=gym.spaces.Box(
                 low=obs_space_low,

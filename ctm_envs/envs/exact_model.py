@@ -1,6 +1,7 @@
 import numpy as np
 from math import pi, pow
 from scipy.integrate import odeint
+from scipy.spatial.transform import Rotation
 
 from ctm_envs.envs.model_base import ModelBase
 
@@ -109,7 +110,8 @@ class ExactModel(ModelBase):
         self.r1 = r1
         self.r2 = r2
         self.r3 = r3
-        return r[-1]
+        R = Rotation.from_dcm(self.r_transforms[:, :3, :3])
+        return r[-1], R.as_quat()
 
     def ode_eq(self, y, s, ux_0, uy_0, ei, gj):
         # first num_tubes elements represent curvatures along z

@@ -8,6 +8,8 @@ ctm_envs.egg-info/
 
 ctm_envs.egg-info/*
 
+/.idea
+
 # C extensions
 *.so
 
