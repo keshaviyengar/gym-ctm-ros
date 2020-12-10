@@ -1,12 +1,10 @@
 import numpy as np
 import rospy
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from geometry_msgs.msg import Point, PointStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Header
 
 from scipy.spatial.transform import Rotation as R
-
 
 # Class used to deal with both model render functions (dominant stiffness and exact)
 class CtmRender:
@@ -19,34 +17,58 @@ class CtmRender:
         # Initialize node, subscribers and publishers
         rospy.init_node('ctm_env', anonymous=True)
         self.joints_pub = rospy.Publisher('ctm/command/joint', JointTrajectory, queue_size=10)
-        self.ag_pub = rospy.Publisher('ctm/achieved_goal', PointStamped, queue_size=10)
-        self.dg_pub = rospy.Publisher('ctm/desired_goal', PointStamped, queue_size=10)
-        # self.tube_backbone_pub = rospy.Publisher("/ctm/tube_backbone_line", Marker, queue_size=100)
+        self.ag_pub = rospy.Publisher('ctm/achieved_goal', Marker, queue_size=10)
+        self.dg_pub = rospy.Publisher('ctm/desired_goal', Marker, queue_size=10)
+        self.tube_backbone_pub = rospy.Publisher("/ctm/tube_backbone_line", Marker, queue_size=100)
         self.viz_pub = rospy.Publisher("visualization_marker_array", MarkerArray, queue_size=100)
 
         self.scale_factor = 1
 
     def publish_achieved_goal(self, achieved_goal):
-        ag_msg = PointStamped()
-        ag_msg.header = Header()
-        ag_msg.header.frame_id = "world"
-        ag_msg.header.stamp = rospy.Time.now()
-        ag_msg.point = Point()
-        ag_msg.point.x = achieved_goal[0] * self.scale_factor
-        ag_msg.point.y = achieved_goal[1] * self.scale_factor
-        ag_msg.point.z = achieved_goal[2] * self.scale_factor
-        self.ag_pub.publish(ag_msg)
+        marker = Marker()
+        marker.header.stamp = rospy.Time.now()
+        marker.header.frame_id = "/world"
+        marker.type = Marker.CUBE
+        marker.color.a = 1.0
+        marker.id = 1
+        marker.pose.position.x = achieved_goal[0]
+        marker.pose.position.y = achieved_goal[1]
+        marker.pose.position.z = achieved_goal[2]
+
+        marker.pose.orientation.x = achieved_goal[3]
+        marker.pose.orientation.y = achieved_goal[4]
+        marker.pose.orientation.z = achieved_goal[5]
+        marker.pose.orientation.w = achieved_goal[6]
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        marker.scale.x = 0.01
+        marker.scale.y = 0.01
+        marker.scale.z = 0.01
+        self.ag_pub.publish(marker)
 
     def publish_desired_goal(self, desired_goal):
-        dg_msg = PointStamped()
-        dg_msg.header = Header()
-        dg_msg.header.frame_id = "world"
-        dg_msg.header.stamp = rospy.Time.now()
-        dg_msg.point = Point()
-        dg_msg.point.x = desired_goal[0] * self.scale_factor
-        dg_msg.point.y = desired_goal[1] * self.scale_factor
-        dg_msg.point.z = desired_goal[2] * self.scale_factor
-        self.dg_pub.publish(dg_msg)
+        marker = Marker()
+        marker.header.stamp = rospy.Time.now()
+        marker.header.frame_id = "/world"
+        marker.type = Marker.CUBE
+        marker.color.a = 1.0
+        marker.id = 2
+        marker.pose.position.x = desired_goal[0]
+        marker.pose.position.y = desired_goal[1]
+        marker.pose.position.z = desired_goal[2]
+
+        marker.pose.orientation.x = desired_goal[3]
+        marker.pose.orientation.y = desired_goal[4]
+        marker.pose.orientation.z = desired_goal[5]
+        marker.pose.orientation.w = desired_goal[6]
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        marker.scale.x = 0.01
+        marker.scale.y = 0.01
+        marker.scale.z = 0.01
+        self.dg_pub.publish(marker)
 
     def publish_transforms(self, transforms):
         nPts = len(transforms)

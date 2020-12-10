@@ -297,7 +297,6 @@ class CtmEnv(gym.GoalEnv):
                 self.render_obj.publish_transforms(self.model.get_r_transforms())
             elif self.render_obj.model == 'exact':
                 self.render_obj.publish_joints(self.rep_obj.get_q())
-                self.render_obj.publish_transforms(self.model.get_r_transforms())
             else:
                 print("Incorrect model selected, no rendering")
 
