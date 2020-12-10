@@ -26,14 +26,14 @@ class TrigObs(ObsBase):
 
         if self.inc_tol_obs:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-1, -1, -1, pos_initial_tol, orient_initial_tol])))
+                (rep_space.low, np.array([-1, -1, -1, -1, -1, -1, -1, pos_initial_tol, orient_initial_tol])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([1, 1, 1, pos_final_tol, orient_final_tol])))
+                (rep_space.high, np.array([1, 1, 1, 1, 1, 1, 1, pos_final_tol, orient_final_tol])))
         else:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-1, -1, -1])))
+                (rep_space.low, np.array([-1, -1, -1, -1, -1, -1, -1])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([1, 1, 1])))
+                (rep_space.high, np.array([1, 1, 1, 1, 1, 1, 1])))
 
         observation_space = gym.spaces.Dict(dict(
             desired_goal=gym.spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1,  1, 1, 1, 1]),

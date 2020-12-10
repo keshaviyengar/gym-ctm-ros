@@ -40,14 +40,19 @@ register(
         'action_rotation_limit': 5,
         'max_episode_steps': 150,
         'n_substeps': 10,
-        'goal_tolerance_parameters': {
+        'pos_tolerance_parameters': {
+            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
+            'N_ts': 200000, 'function': 'constant'
+        },
+        'orient_tolerance_parameters': {
             'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
             'N_ts': 200000, 'function': 'constant'
         },
         'noise_parameters': {
             # 0.001 is the gear ratio
             # 0.001 is also the tracking std deviation for now for testing.
-            'rotation_std': np.deg2rad(0), 'extension_std': 0.001 * np.deg2rad(0), 'tracking_std': 0.0
+            'rotation_std': np.deg2rad(0), 'extension_std': 0.001 * np.deg2rad(0), 'pos_tracking_std': 0.0,
+            'orient_tracking_std': 0.0,
         },
         'joint_representation': 'trig',
         # Format is [beta_0, beta_1, ..., beta_n, alpha_0, ..., alpha_n]

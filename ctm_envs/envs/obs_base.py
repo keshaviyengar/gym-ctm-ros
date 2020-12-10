@@ -24,7 +24,8 @@ class ObsBase:
         extension_std_noise = np.full(len(self.tubes), noise_parameters['extension_std'])
         rotation_std_noise = np.full(len(self.tubes), noise_parameters['rotation_std'])
         self.q_std_noise = np.concatenate((extension_std_noise, rotation_std_noise))
-        self.tracking_std_noise = np.full(3, noise_parameters['tracking_std'])
+        self.pos_tracking_std_noise = np.full(3, noise_parameters['pos_tracking_std'])
+        self.orient_tracking_std_noise = np.full(4, noise_parameters['orient_tracking_std'])
         # Keep q as absolute joint positions, convert to relative as needed and store as absolute
         self.q = initial_q
         self.relative_q = relative_q
@@ -85,17 +86,14 @@ class ObsBase:
 
     # TODO: Ensure Compatability
     # New observation with orientation
-    def get_obs(self, desired_position, desired_orientation, achieved_position, achieved_orientation,
-                position_tolerance, orientation_tolerance,
-                relative=False):
+    def get_obs(self, achieved_goal, desired_goal, position_tolerance, orientation_tolerance, relative=False):
         # Add noise to q, rotation and extension (encoder noise)
         noisy_q = np.random.normal(self.q, self.q_std_noise)
         # Add noise to achieved goal (tracker noise)
-        noisy_achieved_position = np.random.normal(achieved_position, self.tracking_std_noise)
+        noisy_achieved_position = np.random.normal(achieved_goal[:3], self.pos_tracking_std_noise)
         # Add in noisy achieved orientation
-        noisy_achieved_orientation = achieved_orientation
-        achieved_pose = np.concatenate((noisy_achieved_position, noisy_achieved_orientation))
-        desired_pose = np.concatenate((desired_position, desired_orientation))
+        noisy_achieved_orientation = np.random.normal(achieved_goal[3:], self.orient_tracking_std_noise)
+        achieved_goal = np.concatenate((noisy_achieved_position, noisy_achieved_orientation))
         # Relative joint representation
         if relative:
             rep = self.joint2rep(self.qabs2rel(noisy_q))
@@ -103,19 +101,19 @@ class ObsBase:
             rep = self.joint2rep(noisy_q)
         if self.inc_tol_obs:
             self.obs = {
-                'desired_goal': desired_pose,
-                'achieved_goal': achieved_pose,
+                'desired_goal': desired_goal,
+                'achieved_goal': achieved_goal,
                 'observation': np.concatenate(
-                    (rep, desired_pose - achieved_pose, np.array([position_tolerance]),
+                    (rep, desired_goal - achieved_goal, np.array([position_tolerance]),
                      np.array([orientation_tolerance]))
                 )
             }
         else:
             self.obs = {
-                'desired_goal': desired_pose,
-                'achieved_goal': achieved_pose,
+                'desired_goal': desired_goal,
+                'achieved_goal': achieved_goal,
                 'observation': np.concatenate(
-                    (rep, desired_pose - achieved_pose)
+                    (rep, desired_goal - achieved_goal)
                 )
             }
         return self.obs

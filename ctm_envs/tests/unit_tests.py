@@ -45,8 +45,10 @@ def random_rollout(spec, kwargs):
 def test_environment():
     spec_list = [gym.spec('CTR-Reach-v0')]
     for spec in spec_list:
-        representations = ['basic', 'trig', 'polar']
-        model = ['dominant_stiffness', 'exact']
+        #representations = ['basic', 'trig', 'polar']
+        representations = ['trig']
+        model = ['exact']
+        #model = ['dominant_stiffness', 'exact']
         inc_tol_obs = [True, False]
         tol_function = ['constant', 'linear', 'decay']
 
@@ -54,8 +56,14 @@ def test_environment():
             for j in model:
                 for k in inc_tol_obs:
                     for m in tol_function:
-                        goal_tolerance_args = {'inc_tol_obs': k, 'initial_tol': 0.020, 'final_tol': 0.001,
+                        pos_tolerance_args = {'inc_tol_obs': k, 'initial_tol': 0.020, 'final_tol': 0.001,
                                                'N_ts': 200000, 'function': m}
-                        kwargs = {'joint_representation': i, 'model': j, 'goal_tolerance_parameters': goal_tolerance_args}
+                        orient_tolerance_args = {'inc_tol_obs': k, 'initial_tol': 0.020, 'final_tol': 0.001,
+                                              'N_ts': 200000, 'function': m}
+                        kwargs = {'joint_representation': i, 'model': j, 'pos_tolerance_parameters': pos_tolerance_args,
+                                  'orient_tolerance_parameters': orient_tolerance_args}
                         environment(spec, kwargs)
                         random_rollout(spec, kwargs)
+
+if __name__ == '__main__':
+    test_environment()

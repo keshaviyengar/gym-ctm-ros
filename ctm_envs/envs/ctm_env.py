@@ -199,7 +199,8 @@ class CtmEnv(gym.GoalEnv):
             desired_position = goal[:3]
             desired_orientation = goal[3:]
         achieved_position, achieved_orientation = self.model.forward_kinematics(self.rep_obj.get_q())
-        obs = self.rep_obj.get_obs(desired_position, desired_orientation, achieved_position, achieved_orientation,
+        obs = self.rep_obj.get_obs(np.concatenate((achieved_position, achieved_orientation)),
+                                   np.concatenate((desired_position, desired_orientation)),
                                    self.goal_tol_obj.get_pos_tol(), self.goal_tol_obj.get_orient_tol())
         return obs
 
@@ -214,52 +215,45 @@ class CtmEnv(gym.GoalEnv):
             self.rep_obj.set_action(action)
 
         # Compute FK
-        achieved_position, achieved_orientation = self.model.forward_kinematics(self.rep_obj.q)
-        desired_position, desired_orientation = self.rep_obj.get_desired_goal()
+        achieved_pos, achieved_orient = self.model.forward_kinematics(self.rep_obj.q)
+        achieved_goal = np.concatenate((achieved_pos, achieved_orient))
+        desired_goal = self.rep_obj.get_desired_goal()
         self.t += 1
-        reward = self.compute_reward(np.concatenate((achieved_position, achieved_orientation)),
-                                     np.concatenate((desired_position, desired_orientation)), dict())
+        reward = self.compute_reward(achieved_goal, desired_goal, dict())
         done = (reward == 0) or (self.t >= self.max_episode_steps)
-        obs = self.rep_obj.get_obs(desired_position, desired_orientation, achieved_position, achieved_orientation,
-                                   self.goal_tol_obj.get_pos_tol(), self.goal_tol_obj.get_orient_tol())
-        pos_error, orient_error = self.compute_error(achieved_position, achieved_orientation, achieved_position,
-                                                     achieved_orientation)
-        info = {'is_success': self.compute_is_success(achieved_position, achieved_orientation, desired_position,
-                                                      desired_orientation),
+        obs = self.rep_obj.get_obs(achieved_goal, desired_goal, self.goal_tol_obj.get_pos_tol(),
+                                   self.goal_tol_obj.get_orient_tol())
+        pos_error, orient_error = self.compute_error(achieved_goal, achieved_goal)
+        info = {'is_success': self.compute_is_success(achieved_goal, desired_goal),
                 'error_pos': pos_error, 'error_orientation': orient_error,
                 'position_tolerance': self.goal_tol_obj.get_pos_tol(),
-                'orientation_tolerance': self.goal_tol_obj.get_orient_tol(), 'achieved_position': achieved_position,
-                'desired_position': desired_position, 'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
+                'orientation_tolerance': self.goal_tol_obj.get_orient_tol()}
 
         return obs, reward, done, info
 
     def compute_reward(self, achieved_goal, desired_goal, info):
         assert achieved_goal.shape == desired_goal.shape
-        achieved_pos = achieved_goal[:3]
-        desired_pos = desired_goal[:3]
-        achieved_orient = achieved_goal[3:]
-        desired_orient = desired_goal[3:]
+        d, o = self.compute_error(achieved_goal, desired_goal)
+        return (-(d > self.goal_tol_obj.get_pos_tol()).astype(np.float32)) + (-o > self.goal_tol_obj.get_orient_tol())
+
+    def compute_is_success(self, achieved_goal, desired_goal):
+        d, o = self.compute_error(achieved_goal, desired_goal)
+        return (d < self.goal_tol_obj.get_pos_tol()).astype(
+            np.float32) and o < self.goal_tol_obj.get_orient_tol().astype(np.float32)
+
+    def compute_error(self, achieved_goal, desired_goal):
+        achieved_pos, achieved_orient = self.goal2pos_and_orient(achieved_goal)
+        desired_pos, desired_orient = self.goal2pos_and_orient(desired_goal)
         d = np.linalg.norm(achieved_pos - desired_pos, axis=-1)
         q_achieved = Quaternion(achieved_orient)
         q_desired = Quaternion(desired_orient)
         o = Quaternion.absolute_distance(q_achieved, q_desired)
-        return (-(d > self.goal_tol_obj.get_pos_tol()).astype(np.float32)) + (-o > self.goal_tol_obj.get_orient_tol())
-
-    def compute_is_success(self, achieved_position, achieved_orientation, desired_position, desired_orientation):
-        d = np.linalg.norm(achieved_position - desired_position, axis=-1)
-        q_achieved = Quaternion(achieved_orientation)
-        q_desired = Quaternion(desired_orientation)
-        o = Quaternion.absolute_distance(q_achieved, q_desired)
-        return (d < self.goal_tol_obj.get_pos_tol()).astype(
-            np.float32) and o < self.goal_tol_obj.get_orient_tol().astype(np.float32)
+        return d, o
 
     @staticmethod
-    def compute_error(achieved_position, achieved_orientation, desired_position, desired_orientation):
-        position_error = np.linalg.norm(achieved_position - desired_position)
-        q_achieved = Quaternion(achieved_orientation)
-        q_desired = Quaternion(desired_orientation)
-        orientation_error = Quaternion.absolute_distance(q_achieved, q_desired)
-        return position_error, orientation_error
+    # @return pos, orient
+    def goal2pos_and_orient(goal):
+        return goal[:3], goal[3:]
 
     def render(self, mode='human'):
         if mode == 'inference':
