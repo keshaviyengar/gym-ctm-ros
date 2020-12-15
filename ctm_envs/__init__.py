@@ -42,11 +42,11 @@ register(
         'n_substeps': 10,
         'pos_tolerance_parameters': {
             'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
-            'N_ts': 200000, 'function': 'constant'
+            'N_ts': 200000, 'function': 'decay'
         },
         'orient_tolerance_parameters': {
-            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
-            'N_ts': 200000, 'function': 'constant'
+            'inc_tol_obs': True, 'initial_tol': np.deg2rad(20.0), 'final_tol': np.deg2rad(1.0),
+            'N_ts': 200000, 'function': 'decay'
         },
         'noise_parameters': {
             # 0.001 is the gear ratio

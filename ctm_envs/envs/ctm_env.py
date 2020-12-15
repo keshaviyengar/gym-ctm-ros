@@ -7,8 +7,6 @@ from ctm_envs.envs.polar_obs import PolarObs
 from ctm_envs.envs.dominant_stiffness_model import DominantStiffnessModel
 from ctm_envs.envs.exact_model import ExactModel
 
-from pyquaternion import Quaternion
-
 
 class TubeParameters(object):
     def __init__(self, length, length_curved, outer_diameter, inner_diameter, stiffness, torsional_stiffness,
@@ -223,11 +221,15 @@ class CtmEnv(gym.GoalEnv):
         done = (reward == 0) or (self.t >= self.max_episode_steps)
         obs = self.rep_obj.get_obs(achieved_goal, desired_goal, self.goal_tol_obj.get_pos_tol(),
                                    self.goal_tol_obj.get_orient_tol())
-        pos_error, orient_error = self.compute_error(achieved_goal, achieved_goal)
+        pos_error, orient_error = self.compute_error(achieved_goal, desired_goal)
         info = {'is_success': self.compute_is_success(achieved_goal, desired_goal),
-                'error_pos': pos_error, 'error_orientation': orient_error,
+                'errors_pos': pos_error, 'errors_orient': orient_error,
                 'position_tolerance': self.goal_tol_obj.get_pos_tol(),
-                'orientation_tolerance': self.goal_tol_obj.get_orient_tol()}
+                'orientation_tolerance': self.goal_tol_obj.get_orient_tol(),
+                'achieved_goal': achieved_goal, 'desired_goal': desired_goal}
+        if np.isnan(pos_error) or np.isnan(orient_error):
+            print("NaN found in error.")
+
 
         return obs, reward, done, info
 
@@ -238,17 +240,21 @@ class CtmEnv(gym.GoalEnv):
 
     def compute_is_success(self, achieved_goal, desired_goal):
         d, o = self.compute_error(achieved_goal, desired_goal)
-        return (d < self.goal_tol_obj.get_pos_tol()).astype(
-            np.float32) and o < self.goal_tol_obj.get_orient_tol().astype(np.float32)
+        return d < self.goal_tol_obj.get_pos_tol() and o < self.goal_tol_obj.get_orient_tol()
 
     def compute_error(self, achieved_goal, desired_goal):
         achieved_pos, achieved_orient = self.goal2pos_and_orient(achieved_goal)
         desired_pos, desired_orient = self.goal2pos_and_orient(desired_goal)
         d = np.linalg.norm(achieved_pos - desired_pos, axis=-1)
-        q_achieved = Quaternion(achieved_orient)
-        q_desired = Quaternion(desired_orient)
-        o = Quaternion.absolute_distance(q_achieved, q_desired)
+        o = self.orient_error(achieved_orient, desired_orient)
         return d, o
+
+    @staticmethod
+    def orient_error(orient_achieved, orient_desired):
+        # Compute inner product
+        inner_product = orient_achieved[0] * orient_desired[0] + orient_achieved[1] * orient_desired[1] +\
+                        orient_achieved[2] * orient_desired[2] + orient_achieved[3] * orient_desired[3]
+        return np.arccos(2 * inner_product * inner_product - 1)
 
     @staticmethod
     # @return pos, orient
