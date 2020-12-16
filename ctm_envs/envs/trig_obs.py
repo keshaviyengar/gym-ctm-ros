@@ -26,9 +26,9 @@ class TrigObs(ObsBase):
 
         if self.inc_tol_obs:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-1, -1, -1, -1, -1, -1, -1, pos_initial_tol, orient_initial_tol])))
+                (rep_space.low, np.array([-1, -1, -1, -1, -1, -1, -1, pos_final_tol, orient_final_tol])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([1, 1, 1, 1, 1, 1, 1, pos_final_tol, orient_final_tol])))
+                (rep_space.high, np.array([1, 1, 1, 1, 1, 1, 1, pos_initial_tol, orient_initial_tol])))
         else:
             obs_space_low = np.concatenate(
                 (rep_space.low, np.array([-1, -1, -1, -1, -1, -1, -1])))
@@ -36,9 +36,9 @@ class TrigObs(ObsBase):
                 (rep_space.high, np.array([1, 1, 1, 1, 1, 1, 1])))
 
         observation_space = gym.spaces.Dict(dict(
-            desired_goal=gym.spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1,  1, 1, 1, 1]),
+            desired_goal=gym.spaces.Box(low=np.array([0, 0, 0, -1, -1, -1, -1]), high=np.array([1, 1, 1,  1, 1, 1, 1]),
                                         dtype="float32"),
-            achieved_goal=gym.spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0]), high=np.array([1, 1, 1, 1, 1, 1, 1]),
+            achieved_goal=gym.spaces.Box(low=np.array([0, 0, 0, -1, -1, -1, -1]), high=np.array([1, 1, 1, 1, 1, 1, 1]),
                                          dtype="float32"),
             observation=gym.spaces.Box(
                 low=obs_space_low,
@@ -55,7 +55,7 @@ class TrigObs(ObsBase):
         zero_tol = 1e-4
         for tube_length in self.tube_lengths:
             rep_low = np.append(rep_low, [-1, -1, -tube_length + zero_tol])
-            rep_high = np.append(rep_high, [-1, -1, -tube_length + zero_tol])
+            rep_high = np.append(rep_high, [1, 1, -tube_length + zero_tol])
 
         rep_space = gym.spaces.Box(low=rep_low, high=rep_high, dtype=np.float32)
         return rep_space
