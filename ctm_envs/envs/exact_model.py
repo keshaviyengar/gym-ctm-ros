@@ -111,7 +111,7 @@ class ExactModel(ModelBase):
         self.r2 = r2
         self.r3 = r3
         R = Rotation.from_dcm(self.r_transforms[-1, :3, :3])
-        return r[-1], R.as_quat()
+        return np.concatenate((r[-1], R.as_quat()))
 
     def ode_eq(self, y, s, ux_0, uy_0, ei, gj):
         # first num_tubes elements represent curvatures along z

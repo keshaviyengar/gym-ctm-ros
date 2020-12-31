@@ -7,6 +7,8 @@ from ctm_envs.envs.polar_obs import PolarObs
 from ctm_envs.envs.dominant_stiffness_model import DominantStiffnessModel
 from ctm_envs.envs.exact_model import ExactModel
 
+from ctm_envs.envs.ctm_render import CtmRender
+
 
 class TubeParameters(object):
     def __init__(self, length, length_curved, outer_diameter, inner_diameter, stiffness, torsional_stiffness,
@@ -24,7 +26,6 @@ class TubeParameters(object):
 
         # Dominant stiffness model
         self.k = k
-
 
 # TODO: Seperate out position and orientation tolerances. This is quite ugly, can do in a better way.
 class GoalTolerance(object):
@@ -158,13 +159,6 @@ class CtmEnv(gym.GoalEnv):
         else:
             print("Model unavailable")
 
-        if render:
-            from ctm_envs.envs.ctm_render import CtmRender
-            print("Rendering turned on.")
-            self.render_obj = CtmRender(model, self.tubes)
-        else:
-            self.render_obj = None
-
         self.r_df = None
 
         if joint_representation == 'basic':
@@ -178,9 +172,7 @@ class CtmEnv(gym.GoalEnv):
                                     initial_q, relative_q,
                                     ext_tol)
         else:
-            print("Incorrect representation selected, defaulting to basic.")
-            self.rep_obj = BasicObs(self.tubes, pos_tolerance_parameters, orient_tolerance_parameters,
-                                    initial_q, relative_q, ext_tol)
+            raise NameError("joint representation incorrect selection.")
 
         self.goal_tol_obj = GoalTolerance(pos_tolerance_parameters, orient_tolerance_parameters)
         self.t = 0
@@ -192,11 +184,11 @@ class CtmEnv(gym.GoalEnv):
         if goal is None:
             # Resample a desired goal and its associated q joint
             self.desired_q = self.rep_obj.sample_goal()
-            desired_position, desired_orientation = self.model.forward_kinematics(self.desired_q)
+            desired_position, desired_orientation = self.goal2pos_and_orient(self.model.forward_kinematics(self.desired_q))
         else:
             desired_position = goal[:3]
             desired_orientation = goal[3:]
-        achieved_position, achieved_orientation = self.model.forward_kinematics(self.rep_obj.get_q())
+        achieved_position, achieved_orientation = self.goal2pos_and_orient(self.model.forward_kinematics(self.rep_obj.get_q()))
         obs = self.rep_obj.get_obs(np.concatenate((achieved_position, achieved_orientation)),
                                    np.concatenate((desired_position, desired_orientation)),
                                    self.goal_tol_obj.get_pos_tol(), self.goal_tol_obj.get_orient_tol())
@@ -213,8 +205,7 @@ class CtmEnv(gym.GoalEnv):
             self.rep_obj.set_action(action)
 
         # Compute FK
-        achieved_pos, achieved_orient = self.model.forward_kinematics(self.rep_obj.q)
-        achieved_goal = np.concatenate((achieved_pos, achieved_orient))
+        achieved_goal = self.model.forward_kinematics(self.rep_obj.q)
         desired_goal = self.rep_obj.get_desired_goal()
         self.t += 1
         reward = self.compute_reward(achieved_goal, desired_goal, dict())
@@ -229,8 +220,6 @@ class CtmEnv(gym.GoalEnv):
                 'achieved_goal': achieved_goal, 'desired_goal': desired_goal}
         if np.isnan(pos_error) or np.isnan(orient_error):
             print("NaN found in error.")
-
-
         return obs, reward, done, info
 
     def compute_reward(self, achieved_goal, desired_goal, info):
@@ -262,6 +251,13 @@ class CtmEnv(gym.GoalEnv):
         return goal[:3], goal[3:]
 
     def render(self, mode='human'):
+        if mode =='human':
+            achieved_goal = self.model.forward_kinematics(self.rep_obj.q)
+            desired_goal = self.rep_obj.get_desired_goal()
+            self.model.show_plt(achieved_goal, desired_goal)
+        if mode == 'check':
+            if self.t == self.max_episode_steps:
+                print('Success: ',  (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()))
         if mode == 'inference':
             import pandas as pd
             r1, r2, r3 = self.model.get_rs()
@@ -292,19 +288,6 @@ class CtmEnv(gym.GoalEnv):
                 r_df = pd.concat([t_df, r1_df, r2_df, r3_df], axis=1)
                 self.r_df = self.r_df.append(r_df, ignore_index=True)
             self.r_df.to_csv('/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/temp_shape.csv')
-
-        if self.render_obj is not None:
-            # TODO: Issue in pycharm, python 2 ros libaries can't be found. Run in terminal.
-            self.render_obj.publish_desired_goal(self.rep_obj.get_desired_goal())
-            self.render_obj.publish_achieved_goal(self.rep_obj.get_achieved_goal())
-
-            if self.render_obj.model == 'dominant_stiffness':
-                self.render_obj.publish_joints(self.rep_obj.get_q())
-                self.render_obj.publish_transforms(self.model.get_r_transforms())
-            elif self.render_obj.model == 'exact':
-                self.render_obj.publish_joints(self.rep_obj.get_q())
-            else:
-                print("Incorrect model selected, no rendering")
 
     def close(self):
         print("Closed env.")

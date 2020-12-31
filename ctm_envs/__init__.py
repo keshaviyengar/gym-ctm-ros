@@ -48,8 +48,14 @@ register(
             'inc_tol_obs': True, 'initial_tol': np.deg2rad(20.0), 'final_tol': np.deg2rad(1.0),
             'N_ts': 200000, 'function': 'decay'
         },
+        'pos_tolerance_parameters': {
+            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001, 'N_ts': 200000, 'function': 'decay',
+        },
+        'orient_tolerance_parameters': {
+            'inc_tol_obs': True, 'initial_tol': 0.349, 'final_tol': 0.00179, 'N_ts': 200000, 'function': 'decay',
+        },
         'noise_parameters': {
-            # 0.001 is the gear ratio
+                                  # 0.001 is the gear ratio
             # 0.001 is also the tracking std deviation for now for testing.
             'rotation_std': np.deg2rad(0), 'extension_std': 0.001 * np.deg2rad(0), 'pos_tracking_std': 0.0,
             'orient_tracking_std': 0.0,

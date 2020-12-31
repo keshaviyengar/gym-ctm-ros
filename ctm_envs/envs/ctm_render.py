@@ -1,10 +1,8 @@
 import numpy as np
-import rospy
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from visualization_msgs.msg import Marker, MarkerArray
-from std_msgs.msg import Header
-
 from scipy.spatial.transform import Rotation as R
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 # Class used to deal with both model render functions (dominant stiffness and exact)
 class CtmRender:
@@ -14,61 +12,6 @@ class CtmRender:
         self.k = [i.k for i in self.tubes]
         self.l_curved = [i.L_c for i in self.tubes]
         self.tube_lengths = [i.L for i in self.tubes]
-        # Initialize node, subscribers and publishers
-        rospy.init_node('ctm_env', anonymous=True)
-        self.joints_pub = rospy.Publisher('ctm/command/joint', JointTrajectory, queue_size=10)
-        self.ag_pub = rospy.Publisher('ctm/achieved_goal', Marker, queue_size=10)
-        self.dg_pub = rospy.Publisher('ctm/desired_goal', Marker, queue_size=10)
-        self.tube_backbone_pub = rospy.Publisher("/ctm/tube_backbone_line", Marker, queue_size=100)
-        self.viz_pub = rospy.Publisher("visualization_marker_array", MarkerArray, queue_size=100)
-
-        self.scale_factor = 1
-
-    def publish_achieved_goal(self, achieved_goal):
-        marker = Marker()
-        marker.header.stamp = rospy.Time.now()
-        marker.header.frame_id = "/world"
-        marker.type = Marker.CUBE
-        marker.color.a = 1.0
-        marker.id = 1
-        marker.pose.position.x = achieved_goal[0]
-        marker.pose.position.y = achieved_goal[1]
-        marker.pose.position.z = achieved_goal[2]
-
-        marker.pose.orientation.x = achieved_goal[3]
-        marker.pose.orientation.y = achieved_goal[4]
-        marker.pose.orientation.z = achieved_goal[5]
-        marker.pose.orientation.w = achieved_goal[6]
-        marker.color.r = 0.0
-        marker.color.g = 1.0
-        marker.color.b = 0.0
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.scale.z = 0.01
-        self.ag_pub.publish(marker)
-
-    def publish_desired_goal(self, desired_goal):
-        marker = Marker()
-        marker.header.stamp = rospy.Time.now()
-        marker.header.frame_id = "/world"
-        marker.type = Marker.CUBE
-        marker.color.a = 1.0
-        marker.id = 2
-        marker.pose.position.x = desired_goal[0]
-        marker.pose.position.y = desired_goal[1]
-        marker.pose.position.z = desired_goal[2]
-
-        marker.pose.orientation.x = desired_goal[3]
-        marker.pose.orientation.y = desired_goal[4]
-        marker.pose.orientation.z = desired_goal[5]
-        marker.pose.orientation.w = desired_goal[6]
-        marker.color.r = 1.0
-        marker.color.g = 0.0
-        marker.color.b = 0.0
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.scale.z = 0.01
-        self.dg_pub.publish(marker)
 
     def publish_transforms(self, transforms):
         nPts = len(transforms)
@@ -242,20 +185,3 @@ class CtmRender:
         marker.pose.orientation.w = 1
         self.tube_backbone_pub.publish(marker)
         """
-
-    # Joints of the form [(beta+L)_0, ..., (beta+L)_n, alpha_0, ..., alpha_n]
-    def publish_joints(self, joints):
-        num_tubes = int(np.size(joints) / 2)
-        # Preprocessing of joints (need to flip before publishing for C++ code
-        gamma = np.flip(joints[num_tubes:], axis=0)
-        beta_L = joints[0:num_tubes]
-        distal_length = np.ediff1d(np.flip(beta_L, axis=0), to_begin=beta_L[-1])
-        joints = np.empty(num_tubes * 2, dtype=np.float)
-        joints[0:num_tubes] = distal_length
-        joints[num_tubes:] = gamma
-
-        joint_point = JointTrajectoryPoint()
-        joint_point.positions = joints
-        joint_msg = JointTrajectory()
-        joint_msg.points.append(joint_point)
-        self.joints_pub.publish(joint_msg)

@@ -12,6 +12,9 @@ class DominantStiffnessModel(ModelBase):
         self.k = [i.k for i in self.tubes]
         self.l_curved = [i.L_c for i in self.tubes]
         self.tube_lengths = [i.L for i in self.tubes]
+        self.r1 = []
+        self.r2 = []
+        self.r3 = []
         self.r = []
         self.r_transforms = []
 
@@ -26,22 +29,24 @@ class DominantStiffnessModel(ModelBase):
         extension_length = beta + self.tube_lengths
         distal_length = np.ediff1d(np.flip(extension_length, axis=0), to_begin=extension_length[-1])
 
+        num_points = 10
+
         k = np.flip(self.k, axis=0)
         l_curved = np.flip(self.l_curved, axis=0)
 
         T_tube = np.matlib.identity(4)
         # array of segment points
-        r = np.empty([30, 3])
+        r = np.empty([num_points, 3, 3])
         # array of segment points transforms
-        r_transforms = np.empty([30, 4, 4])
+        r_transforms = np.empty([num_points, 4, 4, 3])
 
         for i in range(0, self.num_tubes):
-            l = np.linspace(0, distal_length[i], 10)
+            l = np.linspace(0, distal_length[i], num_points)
             for count, j in enumerate(l):
                 # Get segment transform
                 T_trans = self.constant_curvature_transformation(gamma[i], k[i], j, T_tube, distal_length[i], l_curved[i])
-                r[count + 10*i, :] = np.array([T_trans[0, 3], T_trans[1, 3], T_trans[2, 3]])
-                r_transforms[count + 10*i, :, :] = T_trans
+                r[count, :, i] = np.array([T_trans[0, 3], T_trans[1, 3], T_trans[2, 3]])
+                r_transforms[count, :, :, i] = T_trans
             # Update T_tube for tube
             T_tube = self.constant_curvature_transformation(gamma[i], k[i], distal_length[i], T_tube, distal_length[i],
                                                             l_curved[i])
@@ -98,18 +103,15 @@ class DominantStiffnessModel(ModelBase):
         #                         np.max([T_tube[2, 3], 0])])
 
         assert not np.isnan(r).any()
-        ee_position = r[-1]
-        self.r = r.tolist()
+        ee_position = r[-1,:, i]
+        self.r = r
+        self.r1 = r[:, :, 0]
+        self.r2 = r[:, :, 1]
+        self.r3 = r[:, :, 2]
         self.r_transforms = r_transforms
         return ee_position
         # return as a quaternion vector pair
         # return current_orientation, current_pos
-
-    def get_r(self):
-        return self.r
-
-    def get_r_transforms(self):
-        return self.r_transforms
 
     def constant_curvature_transformation(self, gamma, k, l, T_tube, distal_length, l_curved):
         T_curve = np.matlib.identity(4)
@@ -132,8 +134,8 @@ class DominantStiffnessModel(ModelBase):
 
             # If the extension length is greater than tha curved section, include the difference as a straight
             # section.
-            if distal_length > l_curved:
-                T_straight[2, 3] = distal_length - l_curved
+            if l > l_curved:
+                T_straight[2, 3] = l - l_curved
 
             T_tube = T_tube * T_straight * T_curve
             return T_tube
