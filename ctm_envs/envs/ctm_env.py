@@ -146,6 +146,7 @@ class CtmEnv(gym.GoalEnv):
         else:
             desired_goal = goal
         achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
+        self.starting_position = achieved_goal
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
         return obs
 
@@ -168,9 +169,13 @@ class CtmEnv(gym.GoalEnv):
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
 
         info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
-                'error': np.linalg.norm(desired_goal - achieved_goal),
-                'goal_tolerance': self.goal_tol_obj.get_tol(), 'achieved_goal': achieved_goal,
-                'desired_goal': desired_goal, 'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
+                'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
+                'errors_orient': 0,
+                'position_tolerance': self.goal_tol_obj.get_tol(),
+                'orientation_tolerance': 0,
+                'achieved_goal': achieved_goal,
+                'desired_goal': desired_goal, 'starting_position': self.starting_position,
+                'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
 
         return obs, reward, done, info
 
