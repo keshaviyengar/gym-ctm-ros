@@ -1,7 +1,7 @@
 from gym.envs.registration import register
 import numpy as np
 register(
-    id='CTR-Reach-v0', entry_point='ctm_envs.envs:CtmEnv',
+    id='CTR-Reach-Full-Pose-v0', entry_point='ctm_envs.envs:CtmEnv',
     kwargs={
         'tube_parameters': {
             'tube_0':
