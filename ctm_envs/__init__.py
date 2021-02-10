@@ -51,9 +51,6 @@ register(
         'pos_tolerance_parameters': {
             'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001, 'N_ts': 200000, 'function': 'decay',
         },
-        'orient_tolerance_parameters': {
-            'inc_tol_obs': True, 'initial_tol': 0.349, 'final_tol': 0.00179, 'N_ts': 200000, 'function': 'decay',
-        },
         'noise_parameters': {
                                   # 0.001 is the gear ratio
             # 0.001 is also the tracking std deviation for now for testing.
