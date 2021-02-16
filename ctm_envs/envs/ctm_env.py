@@ -147,6 +147,7 @@ class CtmEnv(gym.GoalEnv):
             desired_goal = goal
         achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
         self.starting_position = achieved_goal
+        self.starting_joints = self.rep_obj.get_q()
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
         return obs
 
@@ -175,7 +176,7 @@ class CtmEnv(gym.GoalEnv):
                 'orientation_tolerance': 0,
                 'achieved_goal': achieved_goal,
                 'desired_goal': desired_goal, 'starting_position': self.starting_position,
-                'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q()}
+                'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q(), 'q_starting': self.starting_joints}
 
         return obs, reward, done, info
 
