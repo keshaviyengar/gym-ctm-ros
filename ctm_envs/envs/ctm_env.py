@@ -171,12 +171,20 @@ class CtmEnv(gym.GoalEnv):
 
         info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
                 'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
+                'error': np.linalg.norm(desired_goal - achieved_goal),
                 'errors_orient': 0,
                 'position_tolerance': self.goal_tol_obj.get_tol(),
-                'orientation_tolerance': 0,
-                'achieved_goal': achieved_goal,
-                'desired_goal': desired_goal, 'starting_position': self.starting_position,
-                'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q(), 'q_starting': self.starting_joints}
+                'orientation_tolerance': 0}
+
+        # Evaluation infos
+        #info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
+        #        'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
+        #        'errors_orient': 0,
+        #        'position_tolerance': self.goal_tol_obj.get_tol(),
+        #        'orientation_tolerance': 0,
+        #        'achieved_goal': achieved_goal,
+        #        'desired_goal': desired_goal, 'starting_position': self.starting_position,
+        #        'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q(), 'q_starting': self.starting_joints}
 
         return obs, reward, done, info
 
