@@ -37,7 +37,7 @@ python-lzf==0.2.4
 python-qt-binding==0.4.3
 python-xlib==0.25
 pytz==2019.1
-PyYAML==5.1
+PyYAML==5.4
 pyzmq==19.0.0
 qt-dotgraph==0.4.1
 qt-gui==0.4.1
