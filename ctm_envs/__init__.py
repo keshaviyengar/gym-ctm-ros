@@ -38,6 +38,9 @@ register(
         'model': 'exact',
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
+        'action_space_norm': False,
+        'action_shielding': False,
+        'normalize_obs': True,
         'max_episode_steps': 150,
         'n_substeps': 10,
         'goal_tolerance_parameters': {
@@ -97,6 +100,7 @@ register(
         'model': 'exact',
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
+        'action_space_norm': True,
         'max_episode_steps': 150,
         'n_substeps': 10,
         'goal_tolerance_parameters': {

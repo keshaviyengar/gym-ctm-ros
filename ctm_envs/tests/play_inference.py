@@ -97,11 +97,12 @@ class CTMPathFollower(object):
             ep_len += 1
 
             if done or infos.get('is_success', False):
-                self.env.render(mode=render_mode)
-                r_df = self.env.env.r_df
-                r_df['episode'] = np.full(r_df.shape[0], self.episode_count)
-                self.shape_df = pd.concat([self.shape_df, r_df], join='inner')
                 break
+
+        self.env.render(mode=render_mode)
+        r_df = self.env.env.r_df
+        r_df['episode'] = np.full(r_df.shape[0], self.episode_count)
+        self.shape_df = pd.concat([self.shape_df, r_df], join='inner')
 
         # Save data for the episode
         if self.achieved_goals.size == 0:
@@ -112,21 +113,20 @@ class CTMPathFollower(object):
             self.desired_goals = np.vstack([self.desired_goals, self.env.convert_obs_to_dict(obs)['desired_goal']])
 
         # Save shape information of the episode
-
     def save_data(self, name=None):
         ag_goals_df = pd.DataFrame(data=self.achieved_goals, columns=['ag_x', 'ag_y', 'ag_z'])
         dg_goals_df = pd.DataFrame(data=self.desired_goals, columns=['dg_x', 'dg_y', 'dg_z'])
         goals_df = pd.concat([ag_goals_df, dg_goals_df], axis=1, join='inner')
         if name is None:
             goals_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_goals.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/revisions/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_goals.csv')
             self.shape_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_shape.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/revisions/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_shape.csv')
         else:
             goals_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_goals.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/revisions/' + self.trajectory_type + '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_goals.csv')
             self.shape_df.to_csv(
-                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + self.trajectory_type +  '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_shape.csv')
+                '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/revisions/' + self.trajectory_type +  '_path/' + self.trajectory_type + '_path_following_' + self.exp_id + '_' + name + '_shape.csv')
 
 
 def noise_sensitivity_analysis(env_id, model_path, trajectory_type, episode_timesteps, tracking_noise_intervals,
@@ -152,18 +152,30 @@ def noise_sensitivity_analysis(env_id, model_path, trajectory_type, episode_time
 
 
 if __name__ == '__main__':
-    # Simple Path Following
-    # env_id = "CTR-Reach-v0"
-    env_id = "CTR-Reach-Noisy-v0"
-    exp_id = "cras_exp_8"
+    # Two different experiments for path following, either experiment 6 or experiment 8
+    exp_num = 8
+    trajectory_type = "line"
+
+    if exp_num == 6:
+        exp_id = "cras_exp_6"
+        env_id = "CTR-Reach-v0"
+        rotation_noise = 0.0
+        tracking_noise = 0.0
+    elif exp_num == 8:
+        exp_id = "cras_exp_8"
+        env_id = "CTR-Reach-Noisy-v0"
+        rotation_noise = 1.0
+        tracking_noise = 0.0008
+
     model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
     episode_timesteps = 20
-    noise_parameters = {'rotation_std': np.deg2rad(1.0), 'extension_std': 0.001 * np.deg2rad(1.0),
-                        'tracking_std': 0.0008}
 
+    noise_parameters = {'rotation_std': np.deg2rad(rotation_noise), 'extension_std': 0.001 * np.deg2rad(rotation_noise),
+                        'tracking_std': tracking_noise}
+
+    # Using ROS for timer only?
     rospy.init_node("ctm_path_following")
 
-    trajectory_type = "line"
     traj_inference = CTMPathFollower(env_id, exp_id, model_path, trajectory_type, episode_timesteps,
                                      noise_parameters)
 
@@ -174,7 +186,10 @@ if __name__ == '__main__':
         elif trajectory_type == 'line':
             traj_inference.line_trajectory_update()
 
-    traj_inference.save_data('noise')
+    if exp_num == 8:
+        traj_inference.save_data('noise')
+    else:
+        traj_inference.save_data()
 
     # Noise sensitivity
     # env_id = "CTR-Reach-Noisy-v0"

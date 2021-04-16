@@ -71,9 +71,9 @@ class GoalTolerance(object):
 
 
 class CtmEnv(gym.GoalEnv):
-    def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps,
-                 n_substeps, goal_tolerance_parameters, noise_parameters, joint_representation, relative_q, initial_q,
-                 resample_joints, render):
+    def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, action_space_norm,
+                 action_shielding, normalize_obs, max_episode_steps, n_substeps, goal_tolerance_parameters,
+                 noise_parameters, joint_representation, relative_q, initial_q, resample_joints, render):
 
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
@@ -88,13 +88,20 @@ class CtmEnv(gym.GoalEnv):
 
         self.action_length_limit = action_length_limit
         self.action_rotation_limit = action_rotation_limit
+        self.action_space_norm = action_space_norm
+        self.action_shielding = action_shielding
+        self.normalize_obs = normalize_obs
 
-        # Action space
-        action_length_limit = np.full(self.num_tubes, self.action_length_limit)
-        action_orientation_limit = np.full(self.num_tubes, np.deg2rad(self.action_rotation_limit))
-        self.action_space = gym.spaces.Box(low=np.concatenate((-action_length_limit, -action_orientation_limit)),
-                                           high=np.concatenate((action_length_limit, action_orientation_limit)),
-                                           dtype="float32")
+        if self.action_space_norm:
+            n_actions = 2 * self.num_tubes
+            self.action_space = gym.spaces.Box(low=-1, high=1, shape=(n_actions,), dtype="float32")
+        else:
+            # Action space
+            action_length_limit = np.full(self.num_tubes, self.action_length_limit)
+            action_orientation_limit = np.full(self.num_tubes, np.deg2rad(self.action_rotation_limit))
+            self.action_space = gym.spaces.Box(low=np.concatenate((-action_length_limit, -action_orientation_limit)),
+                                               high=np.concatenate((action_length_limit, action_orientation_limit)),
+                                               dtype="float32")
 
         self.max_episode_steps = max_episode_steps
         self.n_substeps = n_substeps
@@ -134,7 +141,12 @@ class CtmEnv(gym.GoalEnv):
 
         self.goal_tol_obj = GoalTolerance(goal_tolerance_parameters)
         self.t = 0
-        self.observation_space = self.rep_obj.get_observation_space()
+        self.obs_space = self.rep_obj.get_observation_space()
+        self.norm_obs_space = self.rep_obj.get_normalized_observation_space()
+        if self.normalize_obs:
+            self.observation_space = self.norm_obs_space
+        else:
+            self.observation_space = self.obs_space
 
     def reset(self, goal=None):
         self.t = 0
@@ -149,18 +161,63 @@ class CtmEnv(gym.GoalEnv):
         self.starting_position = achieved_goal
         self.starting_joints = self.rep_obj.get_q()
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
+        if self.normalize_obs:
+            obs = self.get_normalized_obs(obs)
         return obs
 
     def seed(self, seed=None):
         if seed is not None:
             np.random.seed(seed)
 
+    # Shield unscaled actions based on current goal error.
+    def action_shield(self, action):
+        # Compute error to goal
+        ag = self.model.forward_kinematics(self.rep_obj.q)
+        dg = self.rep_obj.get_desired_goal()
+        error = np.linalg.norm(dg - ag)
+
+        # If error less than constant K, perform shielding. Else return action
+        # TODO: Get values for Beta and K
+        if error <=self.K:
+            # Scale the action limits down by some constant determined by current error
+            shielded_action_space = gym.spaces.Box(low=self.Beta * error * self.action_space.low,
+                                                   high=self.Beta * error * self.action_space.high)
+            return np.clip(action, shielded_action_space.low, shielded_action_space.high)
+        else:
+            return action
+
+    # Normalize the observation based on the the original observaion space given. This step only happens right before
+    # sending end of step function. All are mapped to (-1, 1)
+    # Mapping is x' = 2 * (x - xmin) / (xmax - min) - 1
+    def get_normalized_obs(self, obs):
+        # Normalize individually
+        obs_low = self.obs_space.spaces['observation'].low
+        obs_high = self.obs_space.spaces['observation'].high
+        dg_low = self.obs_space.spaces['desired_goal'].low
+        dg_high = self.obs_space.spaces['desired_goal'].high
+        ag_low = self.obs_space.spaces['achieved_goal'].low
+        ag_high = self.obs_space.spaces['achieved_goal'].high
+
+        def normalize(x, x_min, x_max):
+            return 2 * (x - x_min) / (x_max - x_min) - 1
+        # New normalized observation
+        norm_obs = {}
+        norm_obs['observation'] = normalize(obs['observation'], obs_low, obs_high)
+        norm_obs['achieved_goal'] = normalize(obs['achieved_goal'], ag_low, ag_high)
+        norm_obs['desired_goal'] = normalize(obs['desired_goal'], dg_low, dg_high)
+        return norm_obs
+
     def step(self, action):
         assert not np.all(np.isnan(action))
-        action = np.clip(action, self.action_space.low, self.action_space.high)
+        if self.action_space_norm:
+            # Scale actions back up if normalized for environment
+            action[:self.num_tubes] = action[:self.num_tubes] * self.action_length_limit
+            action[self.num_tubes:] = action[self.num_tubes:] * self.action_rotation_limit
+        # Action shielding
+        if self.action_shielding:
+            action = self.action_shield(action)
         for _ in range(self.n_substeps):
             self.rep_obj.set_action(action)
-
         # Compute FK
         achieved_goal = self.model.forward_kinematics(self.rep_obj.q)
         desired_goal = self.rep_obj.get_desired_goal()
@@ -168,6 +225,8 @@ class CtmEnv(gym.GoalEnv):
         reward = self.compute_reward(achieved_goal, desired_goal, dict())
         done = (reward == 0) or (self.t >= self.max_episode_steps)
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
+        if self.normalize_obs:
+            obs = self.get_normalized_obs(obs)
 
         info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
                 'errors_pos': np.linalg.norm(desired_goal - achieved_goal),

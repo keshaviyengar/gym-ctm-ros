@@ -22,18 +22,41 @@ class TrigObs(ObsBase):
 
         if self.inc_tol_obs:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-1, -1, -1, initial_tol])))
+                (rep_space.low, np.array([-2 * 0.1, -2 * 0.1, -0.2, initial_tol])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([1, 1, 1, final_tol])))
+                (rep_space.high, np.array([2 * 0.1, 2 * 0.1, 0.2, final_tol])))
         else:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-1, -1, -1])))
+                (rep_space.low, np.array([-0.1, -0.1, 0])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([1, 1, 1])))
+                (rep_space.high, np.array([0.1, 0.1, 0.2])))
         observation_space = gym.spaces.Dict(dict(
-            desired_goal=gym.spaces.Box(low=np.array([0, 0, 0]), high=np.array([1, 1, 1]),
+            desired_goal=gym.spaces.Box(low=np.array([-0.1, -0.1, 0]), high=np.array([0.1, 0.1, 0.2]),
                                         dtype="float32"),
-            achieved_goal=gym.spaces.Box(low=np.array([0, 0, 0]), high=np.array([1, 1, 1]),
+            achieved_goal=gym.spaces.Box(low=np.array([-0.1, -0.1, 0]), high=np.array([0.1, 0.1, 0.2]),
+                                         dtype="float32"),
+            observation=gym.spaces.Box(
+                low=obs_space_low,
+                high=obs_space_high,
+                dtype="float32")
+        ))
+        self.obs_dim = obs_space_low.size
+        return observation_space
+
+    # Get the normalized observation space
+    def get_normalized_observation_space(self):
+        # For trig, 3 for representation plus 3 for error vector plus for if including tolerance
+        if self.inc_tol_obs:
+            obs_space_low = np.full(self.num_tubes * 3 + 3 + 1, -1)
+            obs_space_high = np.full(self.num_tubes * 3 + 3 + 1, 1)
+        else:
+            obs_space_low = np.full(self.num_tubes * 3 + 3, -1)
+            obs_space_high = np.full(self.num_tubes * 3 + 3, 1)
+
+        observation_space = gym.spaces.Dict(dict(
+            desired_goal=gym.spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 1]),
+                                        dtype="float32"),
+            achieved_goal=gym.spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 1]),
                                          dtype="float32"),
             observation=gym.spaces.Box(
                 low=obs_space_low,
@@ -50,9 +73,9 @@ class TrigObs(ObsBase):
         zero_tol = 1e-4
         for tube_length in self.tube_lengths:
             rep_low = np.append(rep_low, [-1, -1, -tube_length + zero_tol])
-            rep_high = np.append(rep_high, [-1, -1, -tube_length + zero_tol])
+            rep_high = np.append(rep_high, [1, 1, 0])
 
-        rep_space = gym.spaces.Box(low=rep_low, high=rep_high, dtype=np.float32)
+        rep_space = gym.spaces.Box(low=rep_low, high=rep_high, dtype="float32")
         return rep_space
 
     def rep2joint(self, rep):
