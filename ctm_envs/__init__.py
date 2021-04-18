@@ -39,8 +39,8 @@ register(
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
         'action_space_norm': False,
-        'action_shielding': False,
-        'normalize_obs': True,
+        'action_shielding': {'shield': False, 'K': 0, 'Beta': 0},
+        'normalize_obs': False,
         'max_episode_steps': 150,
         'n_substeps': 10,
         'goal_tolerance_parameters': {
@@ -57,7 +57,6 @@ register(
         'initial_q': [0, 0, 0, 0, 0, 0],
         'relative_q': True,
         'render': False,
-        'resample_joints': True
     },
     max_episode_steps=150.
 )

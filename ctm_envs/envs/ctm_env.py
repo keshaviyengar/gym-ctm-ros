@@ -73,7 +73,7 @@ class GoalTolerance(object):
 class CtmEnv(gym.GoalEnv):
     def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, action_space_norm,
                  action_shielding, normalize_obs, max_episode_steps, n_substeps, goal_tolerance_parameters,
-                 noise_parameters, joint_representation, relative_q, initial_q, resample_joints, render):
+                 noise_parameters, joint_representation, relative_q, initial_q, render):
 
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
@@ -89,7 +89,9 @@ class CtmEnv(gym.GoalEnv):
         self.action_length_limit = action_length_limit
         self.action_rotation_limit = action_rotation_limit
         self.action_space_norm = action_space_norm
-        self.action_shielding = action_shielding
+        self.use_action_shield = action_shielding['shield']
+        self.action_shield_K = action_shielding['K']
+        self.action_shield_Beta = action_shielding['Beta']
         self.normalize_obs = normalize_obs
 
         if self.action_space_norm:
@@ -105,7 +107,6 @@ class CtmEnv(gym.GoalEnv):
 
         self.max_episode_steps = max_episode_steps
         self.n_substeps = n_substeps
-        self.resample_joints = resample_joints
         self.desired_q = []
 
         ext_tol = 0
@@ -174,14 +175,14 @@ class CtmEnv(gym.GoalEnv):
         # Compute error to goal
         ag = self.model.forward_kinematics(self.rep_obj.q)
         dg = self.rep_obj.get_desired_goal()
-        error = np.linalg.norm(dg - ag)
+        goal_error = np.linalg.norm(dg - ag)
 
         # If error less than constant K, perform shielding. Else return action
         # TODO: Get values for Beta and K
-        if error <=self.K:
+        if goal_error <=self.action_shield_K:
             # Scale the action limits down by some constant determined by current error
-            shielded_action_space = gym.spaces.Box(low=self.Beta * error * self.action_space.low,
-                                                   high=self.Beta * error * self.action_space.high)
+            shielded_action_space = gym.spaces.Box(low=self.action_shield_Beta * error * self.action_space.low,
+                                                   high=self.action_shield_Beta * error * self.action_space.high)
             return np.clip(action, shielded_action_space.low, shielded_action_space.high)
         else:
             return action
@@ -214,7 +215,7 @@ class CtmEnv(gym.GoalEnv):
             action[:self.num_tubes] = action[:self.num_tubes] * self.action_length_limit
             action[self.num_tubes:] = action[self.num_tubes:] * self.action_rotation_limit
         # Action shielding
-        if self.action_shielding:
+        if self.use_action_shield:
             action = self.action_shield(action)
         for _ in range(self.n_substeps):
             self.rep_obj.set_action(action)
