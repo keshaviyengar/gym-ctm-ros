@@ -38,14 +38,14 @@ register(
         'model': 'exact',
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
-        'action_space_norm': False,
+        'action_space_norm': True,
         'action_shielding': {'shield': False, 'K': 0, 'Beta': 0},
         'normalize_obs': False,
         'max_episode_steps': 150,
         'n_substeps': 10,
         'goal_tolerance_parameters': {
-            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
-            'N_ts': 200000, 'function': 'constant'
+            'inc_tol_obs': False, 'initial_tol': 0.0005, 'final_tol': 0.0005,
+            'N_ts': 500000, 'function': 'constant', 'set_tol': None
         },
         'noise_parameters': {
             # 0.001 is the gear ratio
@@ -58,7 +58,7 @@ register(
         'relative_q': True,
         'render': False,
     },
-    max_episode_steps=150.
+    max_episode_steps=150
 )
 
 register(
@@ -116,7 +116,6 @@ register(
         'initial_q': [0, 0, 0, 0, 0, 0],
         'relative_q': True,
         'render': False,
-        'resample_joints': True
     },
-    max_episode_steps=150.
+    max_episode_steps=150
 )

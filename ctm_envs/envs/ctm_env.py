@@ -50,15 +50,22 @@ class GoalTolerance(object):
             self.a = self.init_tol
             self.r = 1 - np.power((self.final_tol / self.init_tol), 1 / self.N_ts)
 
-        self.current_tol = self.init_tol
+        self.set_tol = self.goal_tolerance_parameters['set_tol']
+        if self.set_tol is None:
+            self.current_tol = self.init_tol
+        else:
+            self.current_tol = self.set_tol
 
     def update(self, training_step):
-        if (self.function == 'linear') and (training_step <= self.N_ts):
-            self.current_tol = self.linear_function(training_step)
-        elif (self.function == 'decay') and (training_step <= self.N_ts):
-            self.current_tol = self.decay_function(training_step)
+        if self.set_tol is None:
+            if (self.function == 'linear') and (training_step <= self.N_ts):
+                self.current_tol = self.linear_function(training_step)
+            elif (self.function == 'decay') and (training_step <= self.N_ts):
+                self.current_tol = self.decay_function(training_step)
+            else:
+                self.current_tol = self.final_tol
         else:
-            self.current_tol = self.final_tol
+            self.current_tol = self.set_tol
 
     def get_tol(self):
         return self.current_tol
