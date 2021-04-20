@@ -38,14 +38,14 @@ register(
         'model': 'exact',
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
-        'action_space_norm': True,
+        'action_space_norm': False,
         'action_shielding': {'shield': False, 'K': 0, 'Beta': 0},
         'normalize_obs': False,
         'max_episode_steps': 150,
         'n_substeps': 10,
         'goal_tolerance_parameters': {
-            'inc_tol_obs': False, 'initial_tol': 0.0005, 'final_tol': 0.0005,
-            'N_ts': 500000, 'function': 'constant', 'set_tol': None
+            'inc_tol_obs': False, 'initial_tol': 0.020, 'final_tol': 0.001,
+            'N_ts': 500000, 'function': 'constant', 'set_tol': 0
         },
         'noise_parameters': {
             # 0.001 is the gear ratio
