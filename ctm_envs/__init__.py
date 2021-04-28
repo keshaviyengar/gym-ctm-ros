@@ -45,7 +45,7 @@ register(
         'n_substeps': 10,
         'goal_tolerance_parameters': {
             'inc_tol_obs': False, 'initial_tol': 0.020, 'final_tol': 0.001,
-            'N_ts': 500000, 'function': 'constant', 'set_tol': 0
+            'N_ts': 200000, 'function': 'constant', 'set_tol': 0
         },
         'noise_parameters': {
             # 0.001 is the gear ratio
@@ -55,7 +55,7 @@ register(
         'joint_representation': 'trig',
         # Format is [beta_0, beta_1, ..., beta_n, alpha_0, ..., alpha_n]
         'initial_q': [0, 0, 0, 0, 0, 0],
-        'relative_q': True,
+        'relative_q': False,
         'render': False,
     },
     max_episode_steps=150
