@@ -80,14 +80,15 @@ class ObsBase:
         q_constrain = np.concatenate((betas, alphas))
         return q_constrain
 
-    def get_obs(self, desired_goal, achieved_goal, goal_tolerance, relative=False):
+    def get_obs(self, desired_goal, achieved_goal, goal_tolerance):
         # Add noise to q, rotation and extension (encoder noise)
         noisy_q = np.random.normal(self.q, self.q_std_noise)
         # Add noise to achieved goal (tracker noise)
         noisy_achieved_goal = np.random.normal(achieved_goal, self.tracking_std_noise)
         # Relative joint representation
-        if relative:
-            rep = self.joint2rep(self.qabs2rel(noisy_q))
+        if self.relative_q:
+            rel_q = self.qabs2rel(noisy_q)
+            rep = self.joint2rep(rel_q)
         else:
             rep = self.joint2rep(noisy_q)
         if self.inc_tol_obs:
@@ -113,19 +114,22 @@ class ObsBase:
     def get_q(self):
         return self.q
 
+    def set_q(self, q):
+        self.q = q
+
     def qabs2rel(self, q):
-        betas = q[0:self.num_tubes]
+        betas = q[:self.num_tubes]
         alphas = q[self.num_tubes:]
         # Compute difference
-        rel_beta = np.diff(betas, prepend=betas[0])
-        rel_alphas = np.diff(alphas, prepend=alphas[0])
-        return np.concatenate((rel_beta, rel_alphas))
+        rel_beta = np.diff(betas, prepend=0)
+        rel_alpha = np.diff(alphas, prepend=0)
+        return np.concatenate((rel_beta, rel_alpha))
 
     def qrel2abs(self, q):
-        rel_beta = q[0:self.num_tubes]
+        rel_beta = q[:self.num_tubes]
         rel_alpha = q[self.num_tubes:]
-        betas = np.concatenate((rel_beta[0], rel_beta)).cumsum()
-        alphas = np.concatenate((rel_alpha[0], rel_alpha)).cumsum()
+        betas = rel_beta.cumsum()
+        alphas = rel_alpha.cumsum()
         return np.concatenate((betas, alphas))
 
     def get_desired_goal(self):

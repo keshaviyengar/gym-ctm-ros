@@ -78,10 +78,9 @@ class GoalTolerance(object):
 
 
 class CtmEnv(gym.GoalEnv):
-    def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, action_space_norm,
-                 action_shielding, normalize_obs, max_episode_steps, n_substeps, goal_tolerance_parameters,
-                 noise_parameters, joint_representation, relative_q, initial_q, render):
-
+    def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, max_episode_steps,
+                 n_substeps, goal_tolerance_parameters, noise_parameters, joint_representation, relative_q, initial_q,
+                 resample_joints, render):
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
         self.tubes = list()
@@ -165,9 +164,15 @@ class CtmEnv(gym.GoalEnv):
             desired_goal = self.model.forward_kinematics(self.desired_q)
         else:
             desired_goal = goal
-        achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
-        self.starting_position = achieved_goal
-        self.starting_joints = self.rep_obj.get_q()
+        if self.resample_joints:
+            self.starting_joints = self.rep_obj.sample_goal()
+            self.rep_obj.set_q(self.starting_joints)
+            achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
+            self.starting_position = achieved_goal
+        else:
+            achieved_goal = self.model.forward_kinematics(self.rep_obj.get_q())
+            self.starting_position = achieved_goal
+            self.starting_joints = self.rep_obj.get_q()
         obs = self.rep_obj.get_obs(desired_goal, achieved_goal, self.goal_tol_obj.get_tol())
         if self.normalize_obs:
             obs = self.get_normalized_obs(obs)
