@@ -119,32 +119,37 @@ if __name__ == '__main__':
     """
 
     # Create environment for basic representation
-    # TODO: Delete polar
     # TODO: Test normalization of state
-    # TODO: Test action shielding (another script)
+    # TODO: Test action shielding
     spec_list = [gym.spec('CTR-Reach-v0')]
-    representations = ['basic', 'trig']
-    relative_q = [True, False]
+    obs_norm_representation = [True]
+    joint_representations = ['trig']
+    relative_q = [False]
+    kwargs = {'resample_joints': True}
     for spec in spec_list:
-        for rep in representations:
-            kwargs = {'joint_representation': rep}
-            for rel_q in relative_q:
-                kwargs = {'relative_q': rel_q}
-                # Test representation
-                test_env = spec.make(**kwargs)
-                obs = test_env.reset()
-                # Ground truth q
-                q_ = test_env.rep_obj.get_q()
-                if rep is 'trig':
-                    rep_ = obs['observation'][:9]
-                    q_conv = test_env.rep_obj.rep2joint(rep_)
-                    if rel_q:
-                        q_rel = test_env.rep_obj.qrel2abs(q_conv)
-                    else:
-                        q_rel = q_conv
-                    # Check if converted matches ground truth
-                    if not np.array_equal(q_, q_rel):
-                        print("q: ", q_, "\nq_conv: ", q_conv, "\nq_rel: ", q_rel)
-
-
-
+        for obs_norm in obs_norm_representation:
+            kwargs['normalize_obs'] = obs_norm
+            for rep in joint_representations:
+                kwargs['joint_representation'] = rep
+                for rel_q in relative_q:
+                    kwargs['relative_q'] = rel_q
+                    # Test representation
+                    test_env = spec.make(**kwargs)
+                    obs = test_env.reset()
+                    # Ground truth q
+                    q_ = test_env.rep_obj.get_q()
+                    # Un-normalize obs if normalized
+                    if obs_norm:
+                        obs = test_env.get_unnormalized_obs(obs)
+                    if rep is 'trig':
+                        rep_ = obs['observation'][:9]
+                        q_conv = test_env.rep_obj.rep2joint(rep_)
+                        if rel_q:
+                            q_rel = test_env.rep_obj.qrel2abs(q_conv)
+                        else:
+                            q_rel = q_conv
+                        # Check if converted matches ground truth
+                        if not np.array_equal(q_, q_rel):
+                            print("Test failed, not equal for kwargs:")
+                            print(kwargs)
+                            print("q: ", q_, "\nq_est: ", q_rel)

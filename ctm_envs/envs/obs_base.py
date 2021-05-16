@@ -109,8 +109,6 @@ class ObsBase:
             }
         return self.obs
 
-
-
     def get_q(self):
         return self.q
 

@@ -38,7 +38,6 @@ register(
         'model': 'exact',
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
-        'action_space_norm': False,
         'action_shielding': {'shield': False, 'K': 0, 'Beta': 0},
         'normalize_obs': False,
         'max_episode_steps': 150,
@@ -56,6 +55,7 @@ register(
         # Format is [beta_0, beta_1, ..., beta_n, alpha_0, ..., alpha_n]
         'initial_q': [0, 0, 0, 0, 0, 0],
         'relative_q': False,
+        'resample_joints': False,
         'render': False,
     },
     max_episode_steps=150
