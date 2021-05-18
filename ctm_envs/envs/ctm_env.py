@@ -96,7 +96,6 @@ class CtmEnv(gym.GoalEnv):
         self.action_rotation_limit = action_rotation_limit
         self.use_action_shield = action_shielding['shield']
         self.action_shield_K = action_shielding['K']
-        self.action_shield_Beta = action_shielding['Beta']
         self.normalize_obs = normalize_obs
 
         # Action space
@@ -186,11 +185,10 @@ class CtmEnv(gym.GoalEnv):
         goal_error = np.linalg.norm(dg - ag)
 
         # If error less than constant K, perform shielding. Else return action
-        # TODO: Get values for Beta and K
         if goal_error <= self.action_shield_K:
             # Scale the action limits down by some constant determined by current error
-            shielded_action_space = gym.spaces.Box(low=self.action_shield_Beta * goal_error * self.action_space.low,
-                                                   high=self.action_shield_Beta * goal_error * self.action_space.high)
+            shielded_action_space = gym.spaces.Box(low=1 / self.action_shield_K * goal_error * self.action_space.low,
+                                                   high=1 / self.action_shield_K * goal_error * self.action_space.high)
             return np.clip(action, shielded_action_space.low, shielded_action_space.high)
         else:
             return action

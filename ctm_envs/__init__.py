@@ -38,7 +38,7 @@ register(
         'model': 'exact',
         'action_length_limit': 0.001,
         'action_rotation_limit': 5,
-        'action_shielding': {'shield': False, 'K': 0, 'Beta': 0},
+        'action_shielding': {'shield': False, 'K': 0},
         'normalize_obs': False,
         'max_episode_steps': 150,
         'n_substeps': 10,
