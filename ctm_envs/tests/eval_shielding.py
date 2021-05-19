@@ -12,6 +12,7 @@ from stable_baselines.her.utils import HERGoalEnvWrapper
 # values for K (the action boundary reduction rate).
 
 
+# TODO: Make this a class for regular evaluations as well has for shileding
 def run_evaluations(env, model, num_episodes):
     set_global_seeds(np.random.randint(0,10))
     for episode in range(num_episodes):
@@ -31,18 +32,21 @@ def run_evaluations(env, model, num_episodes):
 if __name__ == '__main__':
     # Load env with model
     env_id = "CTR-Reach-v0"
+    models = ["/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/cras_exp_6/"]
     # Setup any required kwargs as per experiment
     kwargs = {
         'action_shielding': {'shield': False, 'K': 0},
         'normalize_obs': False,
         'goal_tolerance_parameters': {
-            'inc_tol_obs': False, 'initial_tol': 0.020, 'final_tol': 0.001,
+            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
             'N_ts': 200000, 'function': 'constant', 'set_tol': 0
         },
         'relative_q': True,
         'resample_joints': True,
     }
-    # TODO: Create env and load model
+    env = gym.make(env_id, **kwargs)
+    model_path = models[0] + "learned_policy/500000_saved_model.pkl"
+    model = HER.load(model_path, env=env)
 
     # Range of K [0.001, 0.35]
     k_values = np.linspace(0.001, 0.35, 10)

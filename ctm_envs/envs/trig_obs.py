@@ -22,9 +22,9 @@ class TrigObs(ObsBase):
 
         if self.inc_tol_obs:
             obs_space_low = np.concatenate(
-                (rep_space.low, np.array([-2 * 0.1, -2 * 0.1, -0.2, initial_tol])))
+                (rep_space.low, np.array([-2 * 0.1, -2 * 0.1, -0.2, final_tol])))
             obs_space_high = np.concatenate(
-                (rep_space.high, np.array([2 * 0.1, 2 * 0.1, 0.2, final_tol])))
+                (rep_space.high, np.array([2 * 0.1, 2 * 0.1, 0.2, initial_tol])))
         else:
             obs_space_low = np.concatenate(
                 (rep_space.low, np.array([-0.1, -0.1, 0])))
