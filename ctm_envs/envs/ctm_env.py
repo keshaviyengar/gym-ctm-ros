@@ -80,7 +80,7 @@ class GoalTolerance(object):
 class CtmEnv(gym.GoalEnv):
     def __init__(self, tube_parameters, model, action_length_limit, action_rotation_limit, action_shielding,
                  normalize_obs, max_episode_steps, n_substeps, goal_tolerance_parameters, noise_parameters,
-                 joint_representation, relative_q, initial_q, resample_joints, render):
+                 joint_representation, relative_q, initial_q, resample_joints, render, evaluation):
         self.num_tubes = len(tube_parameters.keys())
         # Extract tube parameters
         self.tubes = list()
@@ -143,6 +143,7 @@ class CtmEnv(gym.GoalEnv):
 
         self.goal_tol_obj = GoalTolerance(goal_tolerance_parameters)
         self.t = 0
+        self.evaluation = evaluation
         self.obs_space = self.rep_obj.get_observation_space()
         self.norm_obs_space = self.rep_obj.get_normalized_observation_space()
         if self.normalize_obs:
@@ -253,22 +254,20 @@ class CtmEnv(gym.GoalEnv):
         if self.normalize_obs:
             obs = self.get_normalized_obs(obs)
 
-        info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
-                'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
-                'error': np.linalg.norm(desired_goal - achieved_goal),
-                'errors_orient': 0,
-                'position_tolerance': self.goal_tol_obj.get_tol(),
-                'orientation_tolerance': 0}
-
-        # Evaluation infos
-        # info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
-        #        'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
-        #        'errors_orient': 0,
-        #        'position_tolerance': self.goal_tol_obj.get_tol(),
-        #        'orientation_tolerance': 0,
-        #        'achieved_goal': achieved_goal,
-        #        'desired_goal': desired_goal, 'starting_position': self.starting_position,
-        #        'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q(), 'q_starting': self.starting_joints}
+        if self.evaluation:
+            # Evaluation infos
+            info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
+                   'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
+                   'errors_orient': 0,
+                   'position_tolerance': self.goal_tol_obj.get_tol(),
+                   'orientation_tolerance': 0,
+                   'achieved_goal': achieved_goal,
+                   'desired_goal': desired_goal, 'starting_position': self.starting_position,
+                   'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q(), 'q_starting': self.starting_joints}
+        else:
+            info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
+                    'error':  np.linalg.norm(desired_goal - achieved_goal),
+                    'position_tolerance': self.goal_tol_obj.get_tol()}
 
         return obs, reward, done, info
 

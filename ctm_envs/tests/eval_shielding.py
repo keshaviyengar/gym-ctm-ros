@@ -13,8 +13,22 @@ from stable_baselines.her.utils import HERGoalEnvWrapper
 
 
 # TODO: Make this a class for regular evaluations as well has for shileding
-def run_evaluations(env, model, num_episodes):
+def run_evaluations(env, model, num_episodes, output_path):
     set_global_seeds(np.random.randint(0,10))
+
+    # Create arrays for saved stats
+    goal_errors = np.empty((num_episodes), dtype=float)
+    B_errors = np.empty((num_episodes), dtype=float)
+    alpha_errors = np.empty((num_episodes), dtype=float)
+    q_B_achieved = np.empty((num_episodes, 3), dtype=float)
+    q_alpha_achieved = np.empty((num_episodes, 3), dtype=float)
+    q_B_desired = np.empty((num_episodes, 3), dtype=float)
+    q_alpha_desired = np.empty((num_episodes, 3), dtype=float)
+    desired_goals = np.empty((num_episodes, 3), dtype=float)
+    achieved_goals = np.empty((num_episodes, 3), dtype=float)
+    starting_positions = np.empty((num_episodes, 3), dtype=float)
+    q_B_starting = np.empty((num_episodes, 3), dtype=float)
+    q_alpha_starting = np.empty((num_episodes, 3), dtype=float)
     for episode in range(num_episodes):
         ep_r = 0
         ep_len = 0
@@ -25,9 +39,32 @@ def run_evaluations(env, model, num_episodes):
             ep_r += reward
             ep_len += 1
             if done or infos.get('is_success', False):
-                # TODO: Save some relevant data here
+                goal_errors[episode] = infos.get('errors_pos')
+                q_B_desired[episode, :] = infos.get('q_desired')[:3]
+                q_alpha_desired[episode, :] = infos.get('q_desired')[3:]
+                q_B_achieved[episode, :] = infos.get('q_achieved')[:3]
+                q_alpha_achieved[episode, :] = infos.get('q_achieved')[3:]
+                desired_goals[episode, :] = infos.get('desired_goal')
+                achieved_goals[episode, :] = infos.get('achieved_goal')
+                starting_positions[episode, :] = infos.get('starting_position')
+                q_B_starting[episode, :] = infos.get('q_starting')[:3]
+                q_alpha_starting[episode, :] = infos.get('q_starting')[3:]
                 break
-        print("episode compete. ep_r: ", ep_r, " ep_len: ", ep_len)
+        print("mean_error: ", np.mean(goal_errors), " ep_r: ", ep_r, " ep_len: ", ep_len)
+        eval_df = pd.DataFrame(data=np.column_stack((desired_goals, achieved_goals, starting_positions,
+                                                     q_B_desired, q_B_achieved, q_B_starting, q_alpha_desired,
+                                                     q_alpha_achieved, q_alpha_starting)),
+                               columns=['desired_goal_x', 'desired_goal_y', 'desired_goal_z',
+                                        'achieved_goal_x', 'achieved_goal_y', 'achieved_goal_z',
+                                        'starting_position_x', 'starting_position_y', 'starting_position_z',
+                                        'B_desired_1', 'B_desired_2', 'B_desired_3',
+                                        'B_achieved_1', 'B_achieved_2', 'B_achieved_3',
+                                        'B_starting_1', 'B_starting_2', 'B_starting_3',
+                                        'alpha_desired_1', 'alpha_desired_2', 'alpha_desired_3',
+                                        'alpha_achieved_1', 'alpha_achieved_2', 'alpha_achieved_3',
+                                        'alpha_startin_1', 'alpha_starting_2', 'alpha_starting_3',
+                                        ])
+        eval_df.to_csv(output_path)
 
 if __name__ == '__main__':
     # Load env with model
@@ -43,6 +80,7 @@ if __name__ == '__main__':
         },
         'relative_q': True,
         'resample_joints': True,
+        'evaluation': True
     }
     env = gym.make(env_id, **kwargs)
     model_path = models[0] + "learned_policy/500000_saved_model.pkl"
@@ -53,7 +91,6 @@ if __name__ == '__main__':
     for k in k_values:
         kwargs['action_shielding']['shield'] = True
         kwargs['action_shielding']['K'] = k
-        # TODO: Fill out evaluations
-        run_evaluations(env, model, num_episodes)
+        run_evaluations(env, model, num_episodes, "test_output")
 
 

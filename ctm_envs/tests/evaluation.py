@@ -30,7 +30,6 @@ def evaluation(env_id, exp_id, model_path, num_episodes, output_path):
     q_B_starting = np.empty((num_episodes, 3), dtype=float)
     q_alpha_starting = np.empty((num_episodes, 3), dtype=float)
 
-    # TODO: pre-allocate memory
     for episode in range(num_episodes):
         print('episode: ', episode)
         # Run random episodes and save sequence of actions and states to plot in matlab
