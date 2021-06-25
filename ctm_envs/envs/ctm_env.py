@@ -330,6 +330,9 @@ class CtmEnv(gym.GoalEnv):
     def update_goal_tolerance(self, N_ts):
         self.goal_tol_obj.update(N_ts)
 
+    def get_goal_tolerance(self):
+        return self.goal_tol_obj.get_tol()
+
     def get_obs_dim(self):
         return self.rep_obj.obs_dim
 
