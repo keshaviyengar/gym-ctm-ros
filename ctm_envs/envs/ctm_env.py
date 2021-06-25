@@ -269,7 +269,7 @@ class CtmEnv(gym.GoalEnv):
                     'errors_pos':  np.linalg.norm(desired_goal - achieved_goal),
                     'errors_orient': 0,
                     'position_tolerance': self.goal_tol_obj.get_tol(),
-                   'orientation_tolerance': 0}
+                    'orientation_tolerance': 0}
 
         return obs, reward, done, info
 
