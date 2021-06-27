@@ -14,7 +14,8 @@ q: Current joint as relative joint representation
 
 
 class ObsBase:
-    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol):
+    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol,
+                 constrain_alpha=True):
         self.tubes = tube_parameters
         self.tube_lengths = [i.L for i in self.tubes]
         self.goal_tolerance_parameters = goal_tolerance_parameters
@@ -32,13 +33,22 @@ class ObsBase:
         self.inc_tol_obs = self.goal_tolerance_parameters['inc_tol_obs']
 
         # Q space
-        alpha_low = np.full(self.num_tubes, -np.pi)
-        alpha_high = np.full(self.num_tubes, np.pi)
+        self.constrain_alpha_low = np.full(self.num_tubes, -np.pi)
+        self.constrain_alpha_high = np.full(self.num_tubes, np.pi)
         beta_low = -np.array(self.tube_lengths) + ext_tol
         beta_high = np.full(self.num_tubes, 0)
+        self.constrain_q_space = gym.spaces.Box(low=np.concatenate((beta_low, self.constrain_alpha_low)),
+                                                high=np.concatenate((beta_high, self.constrain_alpha_high)))
+        if constrain_alpha:
+            alpha_low = self.constrain_alpha_low
+            alpha_high = self.constrain_alpha_high
+        else:
+            alpha_low = np.full(self.num_tubes, -np.inf)
+            alpha_high = np.full(self.num_tubes, -np.inf)
 
         self.q_space = gym.spaces.Box(low=np.concatenate((beta_low, alpha_low)),
                                       high=np.concatenate((beta_high, alpha_high)))
+
         # desired, achieved goal space
         self.observation_space = self.get_observation_space()
         self.obs = None
@@ -61,7 +71,7 @@ class ObsBase:
         # while loop to get constrained points, maybe switch this for a workspace later on
         sample_counter = 0
         while True:
-            q_sample = self.q_space.sample()
+            q_sample = self.constrain_q_space.sample()
             betas = q_sample[0:self.num_tubes]
             alphas = q_sample[self.num_tubes:]
             # Apply constraints
