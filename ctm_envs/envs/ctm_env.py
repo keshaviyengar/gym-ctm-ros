@@ -55,26 +55,28 @@ class GoalTolerance(object):
             self.current_tol = self.init_tol
         else:
             self.current_tol = self.set_tol
+        self.training_step = 0
 
-    def update(self, training_step):
+    def update(self):
         if self.set_tol == 0:
-            if (self.function == 'linear') and (training_step <= self.N_ts):
-                self.current_tol = self.linear_function(training_step)
-            elif (self.function == 'decay') and (training_step <= self.N_ts):
-                self.current_tol = self.decay_function(training_step)
+            if (self.function == 'linear') and (self.training_step <= self.N_ts):
+                self.current_tol = self.linear_function()
+            elif (self.function == 'decay') and (self.training_step <= self.N_ts):
+                self.current_tol = self.decay_function()
             else:
                 self.current_tol = self.final_tol
+            self.training_step += 1
         else:
             self.current_tol = self.set_tol
 
     def get_tol(self):
         return self.current_tol
 
-    def linear_function(self, training_step):
-        return self.a * training_step + self.b
+    def linear_function(self):
+        return self.a * self.training_step + self.b
 
-    def decay_function(self, training_step):
-        return self.a * np.power(1 - self.r, training_step)
+    def decay_function(self):
+        return self.a * np.power(1 - self.r, self.training_step)
 
 
 class CtmEnv(gym.GoalEnv):
@@ -239,6 +241,8 @@ class CtmEnv(gym.GoalEnv):
 
     def step(self, action):
         assert not np.all(np.isnan(action))
+        # Goal Tolerance update
+        self.update_goal_tolerance()
         # Action shielding
         if self.use_action_shield:
             action = self.action_shield(action)
@@ -327,8 +331,8 @@ class CtmEnv(gym.GoalEnv):
     def close(self):
         print("Closed env.")
 
-    def update_goal_tolerance(self, N_ts):
-        self.goal_tol_obj.update(N_ts)
+    def update_goal_tolerance(self):
+        self.goal_tol_obj.update()
 
     def get_goal_tolerance(self):
         return self.goal_tol_obj.get_tol()
