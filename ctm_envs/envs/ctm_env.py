@@ -135,7 +135,7 @@ class CtmEnv(gym.GoalEnv):
                                     ext_tol)
         elif joint_representation == 'trig':
             self.rep_obj = TrigObs(self.tubes, goal_tolerance_parameters, noise_parameters, initial_q, relative_q,
-                                   ext_tol)
+                                   ext_tol, constrain_alpha)
         elif joint_representation == 'polar':
             self.rep_obj = PolarObs(self.tubes, goal_tolerance_parameters, noise_parameters, initial_q, relative_q,
                                     ext_tol)

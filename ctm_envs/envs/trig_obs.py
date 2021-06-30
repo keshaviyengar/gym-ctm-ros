@@ -9,8 +9,8 @@ This representation is the trigonometric / cylindrical {cos(alpha)_i, sin(alpha_
 
 
 class TrigObs(ObsBase):
-    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol):
-        super().__init__(tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol)
+    def __init__(self, tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol, constrain_alpha=True):
+        super().__init__(tube_parameters, goal_tolerance_parameters, noise_parameters, initial_q, relative_q, ext_tol, constrain_alpha)
         self.goal_dim = 3
         self.obs_dim = 0
         print("Trig joint representation used")
