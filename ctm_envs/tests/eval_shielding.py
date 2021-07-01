@@ -74,18 +74,19 @@ def run_evaluations(env, model, num_episodes, output_path):
 if __name__ == '__main__':
     # Load env with model
     env_id = "CTR-Reach-v0"
-    models = ["/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/TRO_control/CTR-Reach-v0"]
+    models = ["/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/CTR-Reach-v0_1/rl_model_500000_steps.zip"]
     # Setup any required kwargs as per experiment
     kwargs = {
         'action_shielding': {'shield': False, 'K': 0},
         'normalize_obs': False,
         'goal_tolerance_parameters': {
-            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
+            'inc_tol_obs': False, 'initial_tol': 0.020, 'final_tol': 0.001,
             'N_ts': 200000, 'function': 'constant', 'set_tol': 0
         },
         'relative_q': True,
         'resample_joints': True,
-        'evaluation': True
+        'evaluation': True,
+        'constrain_alpha': False
     }
 
     env = gym.make(env_id, **kwargs)
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     model = HER.load(model_path, env=env)
     num_episodes = 10000
     run_evaluations(env, model, num_episodes,
-                    "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/shielding_exp_logs/control_evaluations.csv")
+                    "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/evaluations.csv")
 
     # Range of K [0.001, 0.35]
     #k_values = np.linspace(0.001, 0.35, 10)

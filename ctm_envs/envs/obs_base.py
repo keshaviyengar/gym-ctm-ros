@@ -44,7 +44,7 @@ class ObsBase:
             alpha_high = self.constrain_alpha_high
         else:
             alpha_low = np.full(self.num_tubes, -np.inf)
-            alpha_high = np.full(self.num_tubes, -np.inf)
+            alpha_high = np.full(self.num_tubes, np.inf)
 
         self.q_space = gym.spaces.Box(low=np.concatenate((beta_low, alpha_low)),
                                       high=np.concatenate((beta_high, alpha_high)))
