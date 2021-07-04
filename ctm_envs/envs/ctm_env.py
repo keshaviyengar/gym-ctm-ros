@@ -110,6 +110,7 @@ class CtmEnv(gym.GoalEnv):
         self.max_episode_steps = max_episode_steps
         self.n_substeps = n_substeps
         self.resample_joints = resample_joints
+        self.constrain_alpha = constrain_alpha
         self.desired_q = []
 
         ext_tol = 0
@@ -336,6 +337,22 @@ class CtmEnv(gym.GoalEnv):
 
     def get_goal_tolerance(self):
         return self.goal_tol_obj.get_tol()
+
+    def print_parameters(self):
+        print("----Action shielding----")
+        print("use action shield: ", self.use_action_shield)
+        print("action shield K: ", self.action_shield_K)
+
+        print("----Observation and q_space----")
+        print("normalize obs: ", self.normalize_obs)
+        print("relative q: ", self.rep_obj.relative_q)
+        print("inc_tol_obs: ", self.rep_obj.inc_tol_obs)
+        print("tolerance params: ", self.rep_obj.goal_tolerance_parameters)
+
+        print("----Goal tolerance parameters----")
+        print("init, final tol: ", self.goal_tol_obj.init_tol, ", ", self.goal_tol_obj.final_tol)
+        print("N_ts: ", self.goal_tol_obj.N_ts)
+        print("tolerance function: ", self.goal_tol_obj.function)
 
     def get_obs_dim(self):
         return self.rep_obj.obs_dim
