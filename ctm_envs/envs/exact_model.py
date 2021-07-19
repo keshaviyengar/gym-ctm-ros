@@ -102,9 +102,9 @@ class ExactModel(ModelBase):
             print("r is zero. Relevant debug info:")
             print("q: ", q)
         r1 = r
-        _, idx = min((val, idx) for (idx, val) in enumerate(abs(Length - segments.d_tip[1])))
+        _, idx = min((val, idx) for (idx, val) in enumerate(abs(Length - segments.d_tip[len(segments.d_tip) - 2])))
         r2 = r[:idx, :]
-        _, idx = min((val, idx) for (idx, val) in enumerate(abs(Length - segments.d_tip[2])))
+        _, idx = min((val, idx) for (idx, val) in enumerate(abs(Length - segments.d_tip[len(segments.d_tip) - 1])))
         r3 = r[:idx, :]
         self.r1 = r1
         self.r2 = r2

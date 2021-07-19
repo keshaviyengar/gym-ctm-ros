@@ -79,9 +79,11 @@ class ObsBase:
             for i in range(1, self.num_tubes):
                 valid_joint.append((betas[i - 1] <= betas[i]) and (
                         betas[i - 1] + self.tube_lengths[i - 1] >= self.tube_lengths[i] + betas[i]))
-                # print("B", i - 1, " <= ", "B", i, " : ", q_sample[i - 1][2], " <= ", q_sample[i][2])
+                # print(self.num_tubes)
+                # print("q_sample: ", q_sample)
+                # print("B", i - 1, " <= ", "B", i, " : ", q_sample[i - 1], " <= ", q_sample[i])
                 # print("B", i - 1, " + L", i - 1, " <= ", "B", i, " + L", i, " : ",
-                #       q_sample[i - 1][2] + self.tube_lengths[i - 1], " >= ", q_sample[i][2] + self.tube_lengths[i])
+                #       q_sample[i - 1] + self.tube_lengths[i - 1], " >= ", q_sample[i] + self.tube_lengths[i])
                 # print("valid joint: ", valid_joint)
                 # print("")
             if all(valid_joint):

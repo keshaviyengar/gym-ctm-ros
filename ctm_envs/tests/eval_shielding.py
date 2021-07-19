@@ -80,7 +80,7 @@ if __name__ == '__main__':
         'action_shielding': {'shield': False, 'K': 0},
         'normalize_obs': False,
         'goal_tolerance_parameters': {
-            'inc_tol_obs': False, 'initial_tol': 0.020, 'final_tol': 0.001,
+            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
             'N_ts': 200000, 'function': 'constant', 'set_tol': 0
         },
         'relative_q': True,
@@ -89,23 +89,23 @@ if __name__ == '__main__':
         'constrain_alpha': False
     }
 
-    env = gym.make(env_id, **kwargs)
-    model_path = models[0]
-    model = HER.load(model_path, env=env)
-    num_episodes = 10000
-    run_evaluations(env, model, num_episodes,
-                    "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/evaluations.csv")
+    #env = gym.make(env_id, **kwargs)
+    #model_path = models[0]
+    #model = HER.load(model_path, env=env)
+    #num_episodes = 10000
+    #run_evaluations(env, model, num_episodes,
+    #                "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/evaluations.csv")
 
     # Range of K [0.001, 0.35]
-    #k_values = np.linspace(0.001, 0.35, 10)
-    #for k in k_values:
-    #    print("k: ", k)
-    #    kwargs['action_shielding']['shield'] = True
-    #    kwargs['action_shielding']['K'] = k
-    #    env = gym.make(env_id, **kwargs)
-    #    model_path = models[0]
-    #    model = HER.load(model_path, env=env)
-    #    num_episodes = 100
-    #    run_evaluations(env, model, num_episodes,
-    #                    "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/shielding_exp_logs/shielding_control"
-    #                    + str(k) + ".csv")
+    k_values = np.linspace(0.001, 0.35, 10)
+    for k in k_values:
+        print("k: ", k)
+        kwargs['action_shielding']['shield'] = True
+        kwargs['action_shielding']['K'] = k
+        env = gym.make(env_id, **kwargs)
+        model_path = models[0]
+        model = HER.load(model_path, env=env)
+        num_episodes = 100
+        run_evaluations(env, model, num_episodes,
+                        "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/shielding_evals_k_"
+                        + str(k) + ".csv")

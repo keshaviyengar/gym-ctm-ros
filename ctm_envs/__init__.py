@@ -64,6 +64,57 @@ register(
 )
 
 register(
+    id='RViM-Reach-v0', entry_point='ctm_envs.envs:CtmEnv',
+    kwargs={
+        'tube_parameters': {
+            'tube_0':
+                {'length': 309e-3, 'length_curved': 134e-3, 'inner_diameter': 0.7e-3, 'outer_diameter': 1.1e-3,
+                 'stiffness': 9e+10, 'torsional_stiffness': 3.0e+10, 'x_curvature': 8.1059, 'y_curvature': 0,
+                 'k': 9.0},
+
+            'tube_1':
+                {'length': 275e-3, 'length_curved': 77e-3, 'inner_diameter': 1.37e-3, 'outer_diameter': 1.78e-3,
+                 'stiffness': 6e+10, 'torsional_stiffness': 2.0e+10, 'x_curvature': 12.677, 'y_curvature': 0,
+                 'k': 4.0},
+            # 'tube_0':
+            #     {'length': 215e-3, 'length_curved': 14.9e-3, 'inner_diameter': 1.0e-3, 'outer_diameter': 2.4e-3,
+            #      'stiffness': 5e+10, 'torsional_stiffness': 2.3e+10, 'x_curvature': 15.82, 'y_curvature': 0,
+            #      'k': 16.0},
+
+            # 'tube_1':
+            #     {'length': 120.2e-3, 'length_curved': 21.6e-3, 'inner_diameter': 3.0e-3, 'outer_diameter': 3.8e-3,
+            #      'stiffness': 5e+10, 'torsional_stiffness': 2.3e+10, 'x_curvature': 11.8, 'y_curvature': 0,
+            #      'k': 9.0},
+        },
+        'model': 'exact',
+        'action_length_limit': 0.001,
+        'action_rotation_limit': 5,
+        'action_shielding': {'shield': False, 'K': 0},
+        'normalize_obs': False,
+        'max_episode_steps': 150,
+        'n_substeps': 10,
+        'goal_tolerance_parameters': {
+            'inc_tol_obs': False, 'initial_tol': 0.020, 'final_tol': 0.001,
+            'N_ts': 200000, 'function': 'constant', 'set_tol': 0
+        },
+        'noise_parameters': {
+            # 0.001 is the gear ratio
+            # 0.001 is also the tracking std deviation for now for testing.
+            'rotation_std': np.deg2rad(0), 'extension_std': 0.001 * np.deg2rad(0), 'tracking_std': 0.0
+        },
+        'joint_representation': 'trig',
+        'constrain_alpha': True,
+        # Format is [beta_0, beta_1, ..., beta_n, alpha_0, ..., alpha_n]
+        'initial_q': [0, 0, 0, 0],
+        'relative_q': False,
+        'resample_joints': False,
+        'render': False,
+        'evaluation': False
+    },
+    max_episode_steps=150
+)
+
+register(
     id='CTR-Reach-Noisy-v0', entry_point='ctm_envs.envs:CtmEnv',
     kwargs={
         'tube_parameters': {
