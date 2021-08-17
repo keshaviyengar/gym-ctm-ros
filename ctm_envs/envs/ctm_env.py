@@ -7,6 +7,8 @@ from ctm_envs.envs.polar_obs import PolarObs
 from ctm_envs.envs.dominant_stiffness_model import DominantStiffnessModel
 from ctm_envs.envs.exact_model import ExactModel
 
+from ctm_envs.envs.CTR_exact_model import CTRExactModel
+
 
 class TubeParameters(object):
     def __init__(self, length, length_curved, outer_diameter, inner_diameter, stiffness, torsional_stiffness,
@@ -117,7 +119,7 @@ class CtmEnv(gym.GoalEnv):
         if model == 'dominant_stiffness':
             self.model = DominantStiffnessModel(self.tubes)
         elif model == 'exact':
-            self.model = ExactModel(self.tubes)
+            self.model = CTRExactModel(self.tubes)
             ext_tol = 1e-4
         else:
             print("Model unavailable")
