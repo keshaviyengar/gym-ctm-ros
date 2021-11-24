@@ -57,9 +57,9 @@ class GoalTolerance(object):
             self.current_tol = self.init_tol
         else:
             self.current_tol = self.set_tol
-        self.training_step = 0
 
-    def update(self):
+    def update(self, timestep):
+        self.training_step = timestep
         if self.set_tol == 0:
             if (self.function == 'linear') and (self.training_step <= self.N_ts):
                 self.current_tol = self.linear_function()
@@ -244,8 +244,6 @@ class CtmEnv(gym.GoalEnv):
 
     def step(self, action):
         assert not np.all(np.isnan(action))
-        # Goal Tolerance update
-        self.update_goal_tolerance()
         # Action shielding
         if self.use_action_shield:
             action = self.action_shield(action)
@@ -264,7 +262,7 @@ class CtmEnv(gym.GoalEnv):
         if self.evaluation:
             # Evaluation infos
             info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
-                   'errors_pos': np.linalg.norm(desired_goal - achieved_goal),
+                   'error': np.linalg.norm(desired_goal - achieved_goal),
                    'errors_orient': 0,
                    'position_tolerance': self.goal_tol_obj.get_tol(),
                    'orientation_tolerance': 0,
@@ -273,7 +271,7 @@ class CtmEnv(gym.GoalEnv):
                    'q_desired': self.desired_q, 'q_achieved': self.rep_obj.get_q(), 'q_starting': self.starting_joints}
         else:
             info = {'is_success': (np.linalg.norm(desired_goal - achieved_goal) < self.goal_tol_obj.get_tol()),
-                    'errors_pos':  np.linalg.norm(desired_goal - achieved_goal),
+                    'error':  np.linalg.norm(desired_goal - achieved_goal),
                     'errors_orient': 0,
                     'position_tolerance': self.goal_tol_obj.get_tol(),
                     'orientation_tolerance': 0}
@@ -334,8 +332,8 @@ class CtmEnv(gym.GoalEnv):
     def close(self):
         print("Closed env.")
 
-    def update_goal_tolerance(self):
-        self.goal_tol_obj.update()
+    def update_goal_tolerance(self, timestep):
+        self.goal_tol_obj.update(timestep)
 
     def get_goal_tolerance(self):
         return self.goal_tol_obj.get_tol()

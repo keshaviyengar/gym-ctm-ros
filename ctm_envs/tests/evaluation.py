@@ -10,8 +10,8 @@ from stable_baselines.her.utils import HERGoalEnvWrapper
 
 # Aim of this script is to run through a number of episodes, returns the error statistics
 
-def evaluation(env_id, exp_id, model_path, num_episodes, output_path):
-    env = HERGoalEnvWrapper(gym.make(env_id))
+def evaluation(env_id, env_kwargs, exp_id, model_path, num_episodes, output_path):
+    env = HERGoalEnvWrapper(gym.make(env_id, **env_kwargs))
     model = HER.load(model_path, env=env)
 
     seed = np.random.randint(0, 10)
@@ -78,15 +78,18 @@ if __name__ == '__main__':
     # Env and model names and paths
     env_id = "CTR-Reach-v0"
     num_episodes = 1000
-    experiment_ids = ["cras_exp_1_new", "cras_exp_2", "cras_exp_3", "cras_exp_4_new", "cras_exp_5", "cras_exp_6"]
+    experiment_ids = ["cras_exp_5_new"]
+    env_kwargs = {"relative_q": True,
+                  "goal_tolerance_parameters": {'inc_tol_obs': True, "initial_tol": 0.020, "final_tol": 0.001,
+                                                "N_ts": 200000, "function": 'constant', "set_tol": 0.001}}
     for exp_id in experiment_ids:
-        model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
+        model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/her/CTR-Reach-v0_2/rl_model_500000_steps.zip"
         output_path = '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + exp_id + '_joint_error_analysis.csv'
-        evaluation(env_id, exp_id, model_path, num_episodes, output_path)
+        evaluation(env_id, env_kwargs, exp_id, model_path, num_episodes, output_path)
 
-    env_id = "CTR-Reach-Noisy-v0"
-    experiment_ids = ["cras_exp_8"]
-    for exp_id in experiment_ids:
-        model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
-        output_path = '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + exp_id + '_joint_error_analysis.csv'
-        evaluation(env_id, exp_id, model_path, num_episodes, output_path)
+    #env_id = "CTR-Reach-Noisy-v0"
+    #experiment_ids = ["cras_exp_8"]
+    #for exp_id in experiment_ids:
+    #    model_path = "/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/" + exp_id + "/learned_policy/500000_saved_model.pkl"
+    #    output_path = '/home/keshav/ctm2-stable-baselines/saved_results/icra_experiments/data/' + exp_id + '_joint_error_analysis.csv'
+    #    evaluation(env_id, exp_id, model_path, num_episodes, output_path)

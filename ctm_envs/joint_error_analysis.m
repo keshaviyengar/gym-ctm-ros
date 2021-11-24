@@ -47,6 +47,15 @@ polarscatter(vecnorm(exp_table.alpha_desired_2(exp_idx) - exp_table.alpha_starti
 hold on
 polarscatter(vecnorm(exp_table.alpha_desired_3(exp_idx) - exp_table.alpha_starting_3(exp_idx), 2, 2), exp_table.final_errors(exp_idx))
 
+%% Plot achieved goals with errors
+exp_id = 'cras_exp_6';
+tol = 0.005;
+ag_x = exp_table.achieved_goal_x(exp_table.experiment == exp_id & exp_table.final_errors > tol) * 1000;
+ag_y = exp_table.achieved_goal_y(exp_table.experiment == exp_id & exp_table.final_errors > tol) * 1000;
+ag_z = exp_table.achieved_goal_z(exp_table.experiment == exp_id & exp_table.final_errors > tol) * 1000;
+
+final_errors = exp_table.final_errors(exp_table.experiment == exp_id & exp_table.final_errors > tol) * 1000;
+scatter3(ag_x, ag_y, ag_z, 10, final_errors);
 %% Functions
 function AlphaDesiredPolarPlot(exp_table, experiments, k)
 for i=1:length(experiments)

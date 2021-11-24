@@ -72,40 +72,65 @@ def run_evaluations(env, model, num_episodes, output_path):
 
 
 if __name__ == '__main__':
-    # Load env with model
-    env_id = "CTR-Reach-v0"
-    models = ["/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/CTR-Reach-v0_1/rl_model_500000_steps.zip"]
-    # Setup any required kwargs as per experiment
-    kwargs = {
-        'action_shielding': {'shield': False, 'K': 0},
-        'normalize_obs': False,
-        'goal_tolerance_parameters': {
-            'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
-            'N_ts': 200000, 'function': 'constant', 'set_tol': 0
-        },
-        'relative_q': True,
-        'resample_joints': True,
-        'evaluation': True,
-        'constrain_alpha': False
-    }
+    # # Load env with model
+    # env_id = "CTR-Reach-v0"
+    # models = ["/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/CTR-Reach-v0_1/rl_model_500000_steps.zip"]
+    # # Setup any required kwargs as per experiment
+    # kwargs = {
+    #     'action_shielding': {'shield': False, 'K': 0},
+    #     'normalize_obs': False,
+    #     'goal_tolerance_parameters': {
+    #         'inc_tol_obs': True, 'initial_tol': 0.020, 'final_tol': 0.001,
+    #         'N_ts': 200000, 'function': 'constant', 'set_tol': 0
+    #     },
+    #     'relative_q': True,
+    #     'resample_joints': True,
+    #     'evaluation': True,
+    #     'constrain_alpha': False
+    # }
 
-    #env = gym.make(env_id, **kwargs)
-    #model_path = models[0]
-    #model = HER.load(model_path, env=env)
-    #num_episodes = 10000
-    #run_evaluations(env, model, num_episodes,
-    #                "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/evaluations.csv")
+    # # Range of K [0.001, 0.35]
+    # k_values = np.linspace(0.001, 0.35, 10)
+    # for k in k_values:
+    #     print("k: ", k)
+    #     kwargs['action_shielding']['shield'] = True
+    #     kwargs['action_shielding']['K'] = k
+    #     env = gym.make(env_id, **kwargs)
+    #     model_path = models[0]
+    #     model = HER.load(model_path, env=env)
+    #     num_episodes = 100
+    #     run_evaluations(env, model, num_episodes,
+    #                     "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/shielding_evals_k_"
+    #                     + str(k) + ".csv")
 
-    # Range of K [0.001, 0.35]
-    k_values = np.linspace(0.001, 0.35, 10)
-    for k in k_values:
-        print("k: ", k)
-        kwargs['action_shielding']['shield'] = True
-        kwargs['action_shielding']['K'] = k
-        env = gym.make(env_id, **kwargs)
-        model_path = models[0]
-        model = HER.load(model_path, env=env)
-        num_episodes = 100
-        run_evaluations(env, model, num_episodes,
-                        "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/tro_rel_decay_free_rot/shielding_evals_k_"
-                        + str(k) + ".csv")
+    # Curriculum evaluations
+    init_tol = [0.005, 0.010, 0.015, 0.020]
+    final_tol = [0.00025, 0.0005, 0.00075, 0.001]
+    for init_tol_idx in range(len(init_tol)):
+        for final_tol_idx in range(len(final_tol)):
+            i = 4 * (init_tol_idx) + final_tol_idx + 1
+            print("i: ", i)
+            print("initial_tol: ", init_tol[init_tol_idx])
+            print("final_tol: ", final_tol[final_tol_idx])
+            # Load model
+            env_id = "CTR-Reach-v0"
+            model_path = "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/curriculum_experiments/tro_curr_" + str(i) + \
+                    "/her/CTR-Reach-v0_1/rl_model_500000_steps.zip"
+            # Set kwargs
+            kwargs = {
+                'action_shielding': {'shield': False, 'K': 0},
+                'normalize_obs': False,
+                'goal_tolerance_parameters': {
+                    'inc_tol_obs': True, 'initial_tol': init_tol[init_tol_idx], 'final_tol': final_tol[final_tol_idx],
+                    'N_ts': 200000, 'function': 'constant', 'set_tol': 0.001
+                },
+                'relative_q': True,
+                'resample_joints': True,
+                'evaluation': True,
+                'constrain_alpha': False
+            }
+            env = gym.make(env_id, **kwargs)
+            model = HER.load(model_path, env=env)
+            # Run evaluations and save
+            run_evaluations(env, model, 100,
+                            "/home/keshav/ctm2-stable-baselines/saved_results/tro_2021/curriculum_experiments/" + str(i) + "_evaluation.csv")
