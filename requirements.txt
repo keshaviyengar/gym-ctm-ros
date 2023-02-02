@@ -136,7 +136,7 @@ typing==3.6.6
 urdfdom-py==0.4.3
 wcwidth==0.1.7
 webencodings==0.5.1
-Werkzeug==0.15.4
+Werkzeug==0.15.5
 widgetsnbextension==3.5.1
 xacro==1.13.5
 zipp==0.6.0
